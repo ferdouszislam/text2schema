@@ -1,6 +1,6 @@
 # Generated RSchema statistics
 
-Regenerate with `python3 dataset-analysis/RSchema/scripts/analyze_rschema.py`. See `../README.md` for definitions and `../report.md` for interpretation.
+Regenerate with `python3 dataset/RSchema/analysis/scripts/analyze_rschema.py`. See `../README.md` for definitions and `../report.md` for interpretation.
 
 Values below use linear interpolation for percentiles and whitespace splitting for words. Means/percentiles are rounded here to two decimals; JSON retains the computed values.
 

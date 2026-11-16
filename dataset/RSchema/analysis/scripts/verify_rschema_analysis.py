@@ -17,7 +17,7 @@ import subprocess
 import sys
 import tempfile
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[4]
 ANALYSIS_DIR = Path(__file__).resolve().parents[1]
 EXPECTED = {
     'logical': ('annotation.jsonl', '3ab18c248076f2df7ed4f82b3f8e4dc670b6973a1ce5d65caf3930aed9b7c4e4', 518, 2436, 11708),

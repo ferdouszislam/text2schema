@@ -19,7 +19,7 @@ import sqlite3
 from analyze_rschema import CREATE, load_jsonl, scan, unquote
 
 ANALYSIS_DIR = Path(__file__).resolve().parents[1]
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[4]
 
 
 def error_info(error):
@@ -162,7 +162,7 @@ def write_report(path, summary, schemas, statements):
         '- [errors.jsonl](errors.jsonl): only failures, grouped by example, including original and statement errors.',
         '- [summary.json](summary.json): counts, source checksum and runtime.', '',
         'From the repository root:', '', '```bash',
-        'python3 dataset-analysis/RSchema/scripts/inspect_sql_execution.py', '```', '',
+        'python3 dataset/RSchema/analysis/scripts/inspect_sql_execution.py', '```', '',
         '## Failing examples: first error in the original script', '',
         '| Source line | ID | First failed table | Statement | Exact error (single-line messages) |',
         '|---:|---|---|---:|---|',

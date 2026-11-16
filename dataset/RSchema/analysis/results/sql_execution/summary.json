@@ -5,7 +5,7 @@
   "original_scripts_ok": 315,
   "python_version": "3.14.7",
   "schemas_with_multiple_failing_statements": 34,
-  "script_sha256": "28e5b9598b7af6af4bb4998a1641c3e7fcf2b5c01302dc59bcc35ddd5e1f5161",
+  "script_sha256": "c64f24afec506dc6a67797f8a88d8f2db048521586da7fbd0126b80d8feb0a21",
   "source": {
     "blank_lines": 0,
     "bytes": 908416,

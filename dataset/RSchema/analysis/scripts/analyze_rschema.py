@@ -18,7 +18,7 @@ import re
 import sqlite3
 import statistics
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[4]
 ANALYSIS_DIR = Path(__file__).resolve().parents[1]
 DATASETS = {"logical": "annotation.jsonl", "ddl": "annotation_ddl.jsonl"}
 CREATE = re.compile(r"CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?([^()]+?)\s*\(", re.I)
@@ -437,7 +437,7 @@ def main():
 
 
 def write_statistics(path, summary):
-    lines = ['# Generated RSchema statistics', '', 'Regenerate with `python3 dataset-analysis/RSchema/scripts/analyze_rschema.py`. See `../README.md` for definitions and `../report.md` for interpretation.', '', 'Values below use linear interpolation for percentiles and whitespace splitting for words. Means/percentiles are rounded here to two decimals; JSON retains the computed values.', '']
+    lines = ['# Generated RSchema statistics', '', 'Regenerate with `python3 dataset/RSchema/analysis/scripts/analyze_rschema.py`. See `../README.md` for definitions and `../report.md` for interpretation.', '', 'Values below use linear interpolation for percentiles and whitespace splitting for words. Means/percentiles are rounded here to two decimals; JSON retains the computed values.', '']
     for dataset, stats in summary['datasets'].items():
         lines += [f'## {dataset}: {summary["files"][dataset]["filename"]}', '', '| Metric | Total | Min | P25 | Median | Mean | P75 | P95 | Max |', '|---|---:|---:|---:|---:|---:|---:|---:|---:|']
         for key in ['question_words', 'question_chars', 'question_utf8_bytes', 'question_lines', 'answer_chars', 'tables', 'columns', 'columns_per_table', 'primary_key_constraints', 'composite_primary_keys', 'parsed_foreign_keys', 'composite_foreign_keys', 'self_foreign_keys']:

@@ -9,14 +9,14 @@ Use Python **3.10 or later** with its standard-library `sqlite3` module. No pip 
 From the repository root:
 
 ```bash
-python3 dataset-analysis/RSchema/scripts/analyze_rschema.py
-python3 dataset-analysis/RSchema/scripts/verify_rschema_analysis.py
+python3 dataset/RSchema/analysis/scripts/analyze_rschema.py
+python3 dataset/RSchema/analysis/scripts/verify_rschema_analysis.py
 ```
 
 For the [exact SQL execution errors by example and table](results/sql_execution/errors.md):
 
 ```bash
-python3 dataset-analysis/RSchema/scripts/inspect_sql_execution.py
+python3 dataset/RSchema/analysis/scripts/inspect_sql_execution.py
 ```
 
 This additional script runs each original SQL answer, then separately attempts every unchanged
@@ -38,8 +38,8 @@ DDL: 315 SQLite CREATE successes; all 381 declaration inventories independently 
 The scripts resolve their default paths from their own location, so they also work when invoked by absolute path from another directory. To use another input or output directory:
 
 ```bash
-python3 dataset-analysis/RSchema/scripts/analyze_rschema.py --data-dir dataset/RSchema --out-dir /tmp/rschema-analysis
-python3 dataset-analysis/RSchema/scripts/verify_rschema_analysis.py --data-dir dataset/RSchema --results-dir /tmp/rschema-analysis
+python3 dataset/RSchema/analysis/scripts/analyze_rschema.py --data-dir dataset/RSchema --out-dir /tmp/rschema-analysis
+python3 dataset/RSchema/analysis/scripts/verify_rschema_analysis.py --data-dir dataset/RSchema --results-dir /tmp/rschema-analysis
 ```
 
 The analyzer handles the CREATE TABLE grammar in this release. It fails on unsupported declarations instead of silently omitting them. Embedded apostrophes in bare identifiers are retained for counting, even though SQLite rejects them. The verifier is deliberately pinned to this audited release's checksums and independent expected counts; a changed dataset needs a new audit. Different SQLite versions can change error strings or acceptance behavior. Regenerate the results with your runtime before running the verifier; compare `environment.json` when comparing executions.

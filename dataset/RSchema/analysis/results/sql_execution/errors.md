@@ -22,7 +22,7 @@ SQLite supplies no error line/column through this Python exception API; the rang
 From the repository root:
 
 ```bash
-python3 dataset-analysis/RSchema/scripts/inspect_sql_execution.py
+python3 dataset/RSchema/analysis/scripts/inspect_sql_execution.py
 ```
 
 ## Failing examples: first error in the original script

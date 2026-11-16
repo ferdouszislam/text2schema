@@ -1,6 +1,6 @@
 # RSchema dataset analysis for the text2schema project
 
-This audit analyzes the actual files in [`dataset/RSchema/`](../../dataset/RSchema/), in the context of the [project proposal](../../formal_verification_guided_text2schema.pdf). RSchema is a collection of English business specifications paired with reference relational schemas. It supplies schema definitions, not populated databases. It is suitable for evaluating schema reconstruction, but the proposed FD-based verification requires additional trusted annotations.
+This audit analyzes the actual files in [`dataset/RSchema/`](../), in the context of the [project proposal](../../../formal_verification_guided_text2schema.pdf). RSchema is a collection of English business specifications paired with reference relational schemas. It supplies schema definitions, not populated databases. It is suitable for evaluating schema reconstruction, but the proposed FD-based verification requires additional trusted annotations.
 
 The local release has **518 distinct examples**. All have structured JSON schemas; **381** also have SQL DDL. These are overlapping representations, not disjoint datasets. Never add them to obtain a dataset size or join them by line number.
 
@@ -175,7 +175,7 @@ with their exact original error, failing table, statement index, SQL line range 
 A separate pass continues through all 1,748 CREATE statements and finds 115 failing statements
 across those 66 schemas (34 have more than one failing statement). Later errors from that scan
 are labeled separately because the original script stops at its first failure. Reproduce with
-`python3 dataset-analysis/RSchema/scripts/inspect_sql_execution.py`.
+`python3 dataset/RSchema/analysis/scripts/inspect_sql_execution.py`.
 
 ## 6. Implications for the proposed project
 
@@ -207,8 +207,8 @@ Recommended preparation:
 From the repository root:
 
 ```bash
-python3 dataset-analysis/RSchema/scripts/analyze_rschema.py
-python3 dataset-analysis/RSchema/scripts/verify_rschema_analysis.py
+python3 dataset/RSchema/analysis/scripts/analyze_rschema.py
+python3 dataset/RSchema/analysis/scripts/verify_rschema_analysis.py
 ```
 
 Both scripts use only the Python standard library. The analyzer regenerates the full statistical extraction and example-level audit; the verifier independently checks counts and question lengths, then compares a fresh run byte for byte. See [reproduction instructions and counting definitions](README.md), [generated statistics](results/statistics.md), and [the analyzer](scripts/analyze_rschema.py). Narrative recommendations in this report are interpretation; the extracted data lives in `results/`.

@@ -1,0 +1,66 @@
+{
+  "sources": {
+    "logical": {
+      "filename": "annotation.jsonl",
+      "bytes": 1039681,
+      "sha256": "3ab18c248076f2df7ed4f82b3f8e4dc670b6973a1ce5d65caf3930aed9b7c4e4",
+      "records": 518
+    },
+    "ddl": {
+      "filename": "annotation_ddl.jsonl",
+      "bytes": 908416,
+      "sha256": "ce17d9aac0acba21b6d91aff9af1d3663ce1598176dea391b04dbfcb16a4f2e6",
+      "records": 381
+    }
+  },
+  "python_version": "3.14.7",
+  "sqlite_version": "3.50.4",
+  "script_sha256": "df8a3eabc17f886796573cb42c2dc5ae01887a0d252fb968b6a35b75f348aefc",
+  "max_retries": 3,
+  "max_execution_attempts": 4,
+  "merged_ddl_rows": 381,
+  "excluded_json_only_rows": 137,
+  "kept_rows": 375,
+  "kept_original_sql": 315,
+  "kept_repaired_sql": 60,
+  "dropped_rows": 6,
+  "kept_rows_with_json_identifier_changes": 19,
+  "dropped": [
+    {
+      "id": "67552f0a13602ec03b41a7aa",
+      "ddl_source_line": 5,
+      "retries": 3,
+      "error": "no such column: Device_ID"
+    },
+    {
+      "id": "67552f0a13602ec03b41a81e",
+      "ddl_source_line": 35,
+      "retries": 3,
+      "error": "no such column: Record_ID"
+    },
+    {
+      "id": "67552f0a13602ec03b41a8c7",
+      "ddl_source_line": 74,
+      "retries": 3,
+      "error": "no such column: Adding_time"
+    },
+    {
+      "id": "67552f0a13602ec03b41a913",
+      "ddl_source_line": 83,
+      "retries": 3,
+      "error": "no such column: clock"
+    },
+    {
+      "id": "67552f0a13602ec03b41a7e5",
+      "ddl_source_line": 137,
+      "retries": 3,
+      "error": "no such column: Employee_ID"
+    },
+    {
+      "id": "67552f0a13602ec03b41a9f5",
+      "ddl_source_line": 175,
+      "retries": 3,
+      "error": "no such column: Information_ID"
+    }
+  ]
+}

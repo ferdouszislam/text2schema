@@ -1,6 +1,16 @@
 # text2schema
 formal verification guided db spec to db schema generation
 
+Use one virtual environment and dependency file at the project root (Python 3.11 or later):
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+```
+
+The environment is ignored by Git; `requirements.txt` records the project dependencies.
+
 The [RSchema dataset analysis](dataset/RSchema/analysis/report.md) covers file structure,
 specification lengths, schema sizes, keys, types, reference quality, and project
 implications. See [reproduction instructions](dataset/RSchema/analysis/README.md).
@@ -20,4 +30,5 @@ contains 375 examples.
 
 ```bash
 python3 dataset/RSchema/preprocessing/scripts/preprocess_rschema.py
+python3 dataset/RSchema/preprocessing/scripts/plot_preprocessed_counts.py
 ```

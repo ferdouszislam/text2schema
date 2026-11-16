@@ -4,16 +4,18 @@ The [preprocessing script](scripts/preprocess_rschema.py) joins the two original
 
 ## Run
 
-From the repository root, using Python 3.10 or later:
+Use the single `.venv` and `requirements.txt` at the repository root. From that root, using Python 3.11 or later:
 
 ```bash
-python3 dataset/RSchema/preprocessing/scripts/preprocess_rschema.py
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python dataset/RSchema/preprocessing/scripts/preprocess_rschema.py
 ```
 
-No third-party packages, model API, network connection or database server are needed. Defaults are resolved relative to the script, so invoking its absolute path from another directory also works. Override the input and output directories with:
+Preprocessing uses only the standard library; the root requirements install Matplotlib for the plots below. Running the scripts requires no model API or database server. Defaults are resolved relative to the script, so invoking its absolute path from another directory also works. Override the input and output directories with:
 
 ```bash
-python3 dataset/RSchema/preprocessing/scripts/preprocess_rschema.py --data-dir dataset/RSchema --out-dir /tmp/rschema-preprocessed
+.venv/bin/python dataset/RSchema/preprocessing/scripts/preprocess_rschema.py --data-dir dataset/RSchema --out-dir /tmp/rschema-preprocessed
 ```
 
 Expected results for the supplied snapshot, using SQLite 3.50.4:
@@ -60,6 +62,30 @@ Each cleaned record has these fields:
 
 The 315 already executable SQL answers remain unchanged. Of the 60 repaired answers, 58 succeed after one retry and two after two retries. Nineteen retained JSON schemas receive identifier spelling changes. The merge does not remove pre-existing duplicate JSON attributes or alter semantic labels beyond the requested name substitutions. Validation executes CREATE statements in an empty database; it does not test inserts or establish normalization.
 
+## Dataset distributions after preprocessing
+
+The following box plots use all **375 retained examples** in [cleaned.jsonl](results/cleaned.jsonl), with one observation per database schema/specification.
+
+![Box plots of tables per database, total columns per database, and database specification word counts after preprocessing.](results/plots/counts_boxplots.png)
+
+| Measure | Minimum | Q1 | Median | Q3 | Maximum |
+|---|---:|---:|---:|---:|---:|
+| Tables per database | 2 | 3 | 4 | 5.5 | 11 |
+| Total columns per database | 5 | 15 | 21 | 27 | 63 |
+| Database specification words | 37 | 87.5 | 120 | 164 | 440 |
+
+Table and column counts come from executing each retained `ddl_schema` in a fresh SQLite database and inspecting its declared tables and columns. Columns are summed across all tables in each database; PK/FK constraint clauses do not count as extra columns. These SQL counts avoid the three duplicate attribute entries that remain in the JSON labels. There are **1,722 tables and 8,326 columns** across the retained schemas.
+
+Specification word counts use `len(question.split())`, counting whitespace-separated words in the original database specification, with no model tokenizer. Quartiles use linear interpolation at `(n - 1) * p`. Boxes span Q1-Q3, center lines mark medians, and whiskers reach the most extreme observed values within 1.5 times the interquartile range. Circles mark outliers; they remain included in the dataset and calculations.
+
+Recalculate the data and regenerate the figure with the [plotting script](scripts/plot_preprocessed_counts.py), from the repository root:
+
+```bash
+.venv/bin/python dataset/RSchema/preprocessing/scripts/plot_preprocessed_counts.py
+```
+
+The script reads the current cleaned dataset each time; use `--input` and `--out-dir` to override its defaults. It saves the [PNG](results/plots/counts_boxplots.png), [SVG](results/plots/counts_boxplots.svg), [per-schema counts](results/plots/per_schema_counts.csv), and [box-plot statistics and provenance](results/plots/boxplot_statistics.json) under `results/plots/`. The figure files are generated from those calculated statistics.
+
 ## Dropped rows
 
 These are 1-based physical lines in `dataset/RSchema/annotation_ddl.jsonl`. Their SQL remains unchanged throughout all four executions.
@@ -78,7 +104,7 @@ These are 1-based physical lines in `dataset/RSchema/annotation_ddl.jsonl`. Thei
 Run the focused tests from the repository root:
 
 ```bash
-python3 -m unittest discover -s dataset/RSchema/preprocessing/tests -v
+.venv/bin/python -m unittest discover -s dataset/RSchema/preprocessing/tests -v
 ```
 
 The tests cover merging, substitutions in both representations, identifier-only keyword quoting, retry limits, unchanged missing-column errors, fresh databases between attempts, preservation of outputs on input/serialization failures, and execution of every retained schema from the real snapshot.

@@ -1,0 +1,432 @@
+source_line,id,original_status,original_error,sqlite_errorcode,sqlite_errorname,statements,failing_statements,first_failed_statement,first_failed_table,first_sql_start_line,first_sql_end_line
+1,67552f0a13602ec03b41a78b,ok,,,,3,0,,,,
+2,67552f0a13602ec03b41a798,ok,,,,3,0,,,,
+3,67552f0a13602ec03b41a79b,ok,,,,3,0,,,,
+4,67552f0a13602ec03b41a79f,ok,,,,3,0,,,,
+5,67552f0a13602ec03b41a7aa,error,no such column: Device_ID,1,SQLITE_ERROR,4,1,4,Maintenance_Record,24,33
+6,67552f0a13602ec03b41a7ab,ok,,,,3,0,,,,
+7,67552f0a13602ec03b41a7ac,ok,,,,3,0,,,,
+8,67552f0a13602ec03b41a7ad,ok,,,,3,0,,,,
+9,67552f0a13602ec03b41a7af,ok,,,,3,0,,,,
+10,67552f0a13602ec03b41a7b5,ok,,,,8,0,,,,
+11,67552f0a13602ec03b41a7b6,ok,,,,3,0,,,,
+12,67552f0a13602ec03b41a7ba,error,"near ""Order"": syntax error",1,SQLITE_ERROR,4,2,3,Order,13,20
+13,67552f0a13602ec03b41a7bb,ok,,,,3,0,,,,
+14,67552f0a13602ec03b41a7bc,ok,,,,3,0,,,,
+15,67552f0a13602ec03b41a7c7,error,"near ""-"": syntax error",1,SQLITE_ERROR,7,1,3,Inventory,16,22
+16,67552f0a13602ec03b41a7c8,ok,,,,5,0,,,,
+17,67552f0a13602ec03b41a7d1,ok,,,,3,0,,,,
+18,67552f0a13602ec03b41a7d3,ok,,,,4,0,,,,
+19,67552f0a13602ec03b41a7d4,ok,,,,7,0,,,,
+20,67552f0a13602ec03b41a7d8,ok,,,,3,0,,,,
+21,67552f0a13602ec03b41a7da,ok,,,,3,0,,,,
+22,67552f0a13602ec03b41a7db,ok,,,,4,0,,,,
+23,67552f0a13602ec03b41a7dc,ok,,,,3,0,,,,
+24,67552f0a13602ec03b41a7e2,ok,,,,5,0,,,,
+25,67552f0a13602ec03b41a7e6,ok,,,,5,0,,,,
+26,67552f0a13602ec03b41a7e7,ok,,,,8,0,,,,
+27,67552f0a13602ec03b41a7f3,ok,,,,2,0,,,,
+28,67552f0a13602ec03b41a7fe,ok,,,,3,0,,,,
+29,67552f0a13602ec03b41a7ff,ok,,,,7,0,,,,
+30,67552f0a13602ec03b41a800,ok,,,,7,0,,,,
+31,67552f0a13602ec03b41a801,ok,,,,3,0,,,,
+32,67552f0a13602ec03b41a810,ok,,,,3,0,,,,
+33,67552f0a13602ec03b41a813,ok,,,,5,0,,,,
+34,67552f0a13602ec03b41a817,ok,,,,4,0,,,,
+35,67552f0a13602ec03b41a81e,error,no such column: Record_ID,1,SQLITE_ERROR,3,1,3,Supply_Record,15,23
+36,67552f0a13602ec03b41a821,ok,,,,3,0,,,,
+37,67552f0a13602ec03b41a823,ok,,,,3,0,,,,
+38,67552f0a13602ec03b41a824,ok,,,,3,0,,,,
+39,67552f0a13602ec03b41a825,ok,,,,3,0,,,,
+40,67552f0a13602ec03b41a826,ok,,,,2,0,,,,
+41,67552f0a13602ec03b41a82a,ok,,,,3,0,,,,
+42,67552f0a13602ec03b41a82b,ok,,,,3,0,,,,
+43,67552f0a13602ec03b41a834,ok,,,,3,0,,,,
+44,67552f0a13602ec03b41a837,ok,,,,3,0,,,,
+45,67552f0a13602ec03b41a83e,ok,,,,6,0,,,,
+46,67552f0a13602ec03b41a842,ok,,,,3,0,,,,
+47,67552f0a13602ec03b41a847,ok,,,,5,0,,,,
+48,67552f0a13602ec03b41a84b,ok,,,,6,0,,,,
+49,67552f0a13602ec03b41a84e,ok,,,,4,0,,,,
+50,67552f0a13602ec03b41a853,ok,,,,5,0,,,,
+51,67552f0a13602ec03b41a85b,error,"near ""Order"": syntax error",1,SQLITE_ERROR,5,2,3,Order,21,27
+52,67552f0a13602ec03b41a85c,ok,,,,4,0,,,,
+53,67552f0a13602ec03b41a862,ok,,,,6,0,,,,
+54,67552f0a13602ec03b41a864,error,"near ""-"": syntax error",1,SQLITE_ERROR,4,1,2,user,7,21
+55,67552f0a13602ec03b41a86e,ok,,,,3,0,,,,
+56,67552f0a13602ec03b41a86f,ok,,,,3,0,,,,
+57,67552f0a13602ec03b41a870,ok,,,,4,0,,,,
+58,67552f0a13602ec03b41a878,ok,,,,7,0,,,,
+59,67552f0a13602ec03b41a879,ok,,,,6,0,,,,
+60,67552f0a13602ec03b41a87a,ok,,,,5,0,,,,
+61,67552f0a13602ec03b41a881,error,"near ""Transaction"": syntax error",1,SQLITE_ERROR,3,1,3,Transaction,15,25
+62,67552f0a13602ec03b41a882,ok,,,,8,0,,,,
+63,67552f0a13602ec03b41a885,error,"near ""-"": syntax error",1,SQLITE_ERROR,5,1,4,attendance,26,33
+64,67552f0a13602ec03b41a891,ok,,,,4,0,,,,
+65,67552f0a13602ec03b41a892,ok,,,,5,0,,,,
+66,67552f0a13602ec03b41a895,ok,,,,2,0,,,,
+67,67552f0a13602ec03b41a898,ok,,,,5,0,,,,
+68,67552f0a13602ec03b41a899,ok,,,,3,0,,,,
+69,67552f0a13602ec03b41a8aa,ok,,,,5,0,,,,
+70,67552f0a13602ec03b41a8b5,error,"near ""Order"": syntax error",1,SQLITE_ERROR,5,2,3,Order,20,34
+71,67552f0a13602ec03b41a8ba,ok,,,,3,0,,,,
+72,67552f0a13602ec03b41a8bb,ok,,,,4,0,,,,
+73,67552f0a13602ec03b41a8c0,ok,,,,6,0,,,,
+74,67552f0a13602ec03b41a8c7,error,no such column: Adding_time,1,SQLITE_ERROR,4,2,3,Add_Contact,24,33
+75,67552f0a13602ec03b41a8df,ok,,,,3,0,,,,
+76,67552f0a13602ec03b41a8e5,ok,,,,2,0,,,,
+77,67552f0a13602ec03b41a8e6,ok,,,,4,0,,,,
+78,67552f0a13602ec03b41a8e9,error,"near ""Update"": syntax error",1,SQLITE_ERROR,4,2,2,Update,12,19
+79,67552f0a13602ec03b41a8f2,ok,,,,4,0,,,,
+80,67552f0a13602ec03b41a8f3,error,"near ""Order"": syntax error",1,SQLITE_ERROR,8,3,3,Order,28,36
+81,67552f0a13602ec03b41a908,ok,,,,2,0,,,,
+82,67552f0a13602ec03b41a90e,ok,,,,4,0,,,,
+83,67552f0a13602ec03b41a913,error,no such column: clock,1,SQLITE_ERROR,6,2,2,employee_attendance,10,15
+84,67552f0a13602ec03b41a918,ok,,,,4,0,,,,
+85,67552f0a13602ec03b41a93d,ok,,,,6,0,,,,
+86,67552f0a13602ec03b41a94a,ok,,,,3,0,,,,
+87,67552f0a13602ec03b41a95a,ok,,,,3,0,,,,
+88,67552f0a13602ec03b41a95e,ok,,,,3,0,,,,
+89,67552f0a13602ec03b41a971,ok,,,,6,0,,,,
+90,67552f0a13602ec03b41a980,ok,,,,5,0,,,,
+91,67552f0a13602ec03b41a981,ok,,,,5,0,,,,
+92,67552f0a13602ec03b41a983,ok,,,,4,0,,,,
+93,67552f0a13602ec03b41a987,error,"near ""Order"": syntax error",1,SQLITE_ERROR,4,1,3,Order,16,25
+94,67552f0a13602ec03b41a98e,ok,,,,8,0,,,,
+95,67552f0a13602ec03b41a999,ok,,,,5,0,,,,
+96,67552f0a13602ec03b41a99d,ok,,,,2,0,,,,
+97,67552f0a13602ec03b41a9a7,ok,,,,5,0,,,,
+98,67552f0a13602ec03b41a9ac,ok,,,,7,0,,,,
+99,67552f0a13602ec03b41a9ae,ok,,,,10,0,,,,
+100,67552f0a13602ec03b41a9b4,ok,,,,3,0,,,,
+101,67552f0a13602ec03b41a9b7,ok,,,,6,0,,,,
+102,67552f0a13602ec03b41a9bf,ok,,,,6,0,,,,
+103,67552f0a13602ec03b41a9c9,ok,,,,9,0,,,,
+104,67552f0a13602ec03b41a9d0,ok,,,,3,0,,,,
+105,67552f0a13602ec03b41a9d1,ok,,,,4,0,,,,
+106,67552f0a13602ec03b41a9e2,ok,,,,4,0,,,,
+107,67552f0a13602ec03b41aa06,ok,,,,4,0,,,,
+108,67552f0b13602ec03b41aa22,ok,,,,8,0,,,,
+109,67552f0b13602ec03b41aa24,ok,,,,7,0,,,,
+110,67552f0b13602ec03b41aa30,ok,,,,8,0,,,,
+111,67552f0b13602ec03b41aa40,error,"near ""Order"": syntax error",1,SQLITE_ERROR,6,2,4,Order,23,30
+112,67552f0b13602ec03b41aa53,ok,,,,6,0,,,,
+113,67552f0b13602ec03b41aa55,ok,,,,5,0,,,,
+114,67552f0b13602ec03b41aa56,ok,,,,6,0,,,,
+115,67552f0b13602ec03b41aa5f,ok,,,,4,0,,,,
+116,67552f0b13602ec03b41aa62,ok,,,,6,0,,,,
+117,67552f0b13602ec03b41aa79,ok,,,,3,0,,,,
+118,67552f0b13602ec03b41aa9c,error,"near ""Order"": syntax error",1,SQLITE_ERROR,4,2,3,Order,23,31
+119,67552f0b13602ec03b41aaa2,ok,,,,5,0,,,,
+120,67552f0b13602ec03b41aaa4,ok,,,,3,0,,,,
+121,67552f0b13602ec03b41aaab,ok,,,,4,0,,,,
+122,67552f0b13602ec03b41aab0,ok,,,,3,0,,,,
+123,67552f0b13602ec03b41aabb,ok,,,,4,0,,,,
+124,67552f0b13602ec03b41aacb,error,"near ""-"": syntax error",1,SQLITE_ERROR,3,1,2,Directory,9,14
+125,67552f0b13602ec03b41aadb,error,"near ""Order"": syntax error",1,SQLITE_ERROR,7,1,6,Order,48,58
+126,67552f0b13602ec03b41ab2b,error,"near ""Order"": syntax error",1,SQLITE_ERROR,4,2,3,Order,15,22
+127,67552f0a13602ec03b41a789,ok,,,,3,0,,,,
+128,67552f0a13602ec03b41a791,ok,,,,3,0,,,,
+129,67552f0a13602ec03b41a7a2,ok,,,,4,0,,,,
+130,67552f0a13602ec03b41a7a3,ok,,,,4,0,,,,
+131,67552f0a13602ec03b41a7a8,ok,,,,5,0,,,,
+132,67552f0a13602ec03b41a7ce,ok,,,,5,0,,,,
+133,67552f0a13602ec03b41a7cf,ok,,,,4,0,,,,
+134,67552f0a13602ec03b41a7d5,ok,,,,5,0,,,,
+135,67552f0a13602ec03b41a7d7,ok,,,,4,0,,,,
+136,67552f0a13602ec03b41a7de,ok,,,,5,0,,,,
+137,67552f0a13602ec03b41a7e5,error,no such column: Employee_ID,1,SQLITE_ERROR,4,1,4,Sales_Record,23,33
+138,67552f0a13602ec03b41a7ee,ok,,,,4,0,,,,
+139,67552f0a13602ec03b41a7f0,ok,,,,3,0,,,,
+140,67552f0a13602ec03b41a7f1,ok,,,,4,0,,,,
+141,67552f0a13602ec03b41a7f7,error,"near ""Order"": syntax error",1,SQLITE_ERROR,4,2,2,Order,9,15
+142,67552f0a13602ec03b41a7f9,ok,,,,4,0,,,,
+143,67552f0a13602ec03b41a814,ok,,,,3,0,,,,
+144,67552f0a13602ec03b41a81a,ok,,,,4,0,,,,
+145,67552f0a13602ec03b41a820,ok,,,,3,0,,,,
+146,67552f0a13602ec03b41a82e,ok,,,,4,0,,,,
+147,67552f0a13602ec03b41a82f,ok,,,,3,0,,,,
+148,67552f0a13602ec03b41a831,ok,,,,4,0,,,,
+149,67552f0a13602ec03b41a835,ok,,,,3,0,,,,
+150,67552f0a13602ec03b41a83a,ok,,,,3,0,,,,
+151,67552f0a13602ec03b41a849,error,"near ""Transaction"": syntax error",1,SQLITE_ERROR,5,1,4,Transaction,24,34
+152,67552f0a13602ec03b41a857,ok,,,,3,0,,,,
+153,67552f0a13602ec03b41a873,ok,,,,5,0,,,,
+154,67552f0a13602ec03b41a875,error,"near ""Order"": syntax error",1,SQLITE_ERROR,7,2,6,Order,39,51
+155,67552f0a13602ec03b41a888,ok,,,,5,0,,,,
+156,67552f0a13602ec03b41a88e,ok,,,,4,0,,,,
+157,67552f0a13602ec03b41a890,ok,,,,4,0,,,,
+158,67552f0a13602ec03b41a8a6,ok,,,,4,0,,,,
+159,67552f0a13602ec03b41a8a9,error,"near ""Order"": syntax error",1,SQLITE_ERROR,5,1,5,Order,29,39
+160,67552f0a13602ec03b41a8ae,error,"near ""Order"": syntax error",1,SQLITE_ERROR,8,2,7,Order,56,65
+161,67552f0a13602ec03b41a8cc,error,"near ""Order"": syntax error",1,SQLITE_ERROR,3,2,2,Order,10,17
+162,67552f0a13602ec03b41a8f9,ok,,,,2,0,,,,
+163,67552f0a13602ec03b41a903,ok,,,,5,0,,,,
+164,67552f0a13602ec03b41a90d,error,"near ""Order"": syntax error",1,SQLITE_ERROR,5,2,4,Order,38,45
+165,67552f0a13602ec03b41a911,ok,,,,2,0,,,,
+166,67552f0a13602ec03b41a91b,ok,,,,6,0,,,,
+167,67552f0a13602ec03b41a935,ok,,,,3,0,,,,
+168,67552f0a13602ec03b41a967,ok,,,,6,0,,,,
+169,67552f0a13602ec03b41a9a8,ok,,,,3,0,,,,
+170,67552f0a13602ec03b41a9b3,ok,,,,5,0,,,,
+171,67552f0a13602ec03b41a9b5,ok,,,,3,0,,,,
+172,67552f0a13602ec03b41a9be,error,"near ""Order"": syntax error",1,SQLITE_ERROR,4,1,4,Order,23,30
+173,67552f0a13602ec03b41a9d5,ok,,,,3,0,,,,
+174,67552f0a13602ec03b41a9f1,ok,,,,5,0,,,,
+175,67552f0a13602ec03b41a9f5,error,no such column: Information_ID,1,SQLITE_ERROR,5,1,4,Comment,25,33
+176,67552f0a13602ec03b41a9f9,error,"near ""-"": syntax error",1,SQLITE_ERROR,6,2,3,Sign-in,18,25
+177,67552f0a13602ec03b41a9fb,ok,,,,9,0,,,,
+178,67552f0b13602ec03b41aa25,ok,,,,5,0,,,,
+179,67552f0b13602ec03b41aa28,error,"near ""Order"": syntax error",1,SQLITE_ERROR,8,4,3,Order,21,30
+180,67552f0b13602ec03b41aa2d,ok,,,,3,0,,,,
+181,67552f0b13602ec03b41aa35,error,"near ""-"": syntax error",1,SQLITE_ERROR,5,1,5,Two-Player_Battle_Game,39,50
+182,67552f0b13602ec03b41aa38,ok,,,,5,0,,,,
+183,67552f0b13602ec03b41aa4b,ok,,,,4,0,,,,
+184,67552f0b13602ec03b41aaa8,ok,,,,3,0,,,,
+185,67552f0b13602ec03b41aaa9,error,"near ""-"": syntax error",1,SQLITE_ERROR,4,2,1,Customer,1,11
+186,67552f0b13602ec03b41aaba,ok,,,,3,0,,,,
+187,67552f0b13602ec03b41aae8,ok,,,,6,0,,,,
+188,67552f0b13602ec03b41aaec,ok,,,,4,0,,,,
+189,67552f0b13602ec03b41aafc,ok,,,,5,0,,,,
+190,67552f0b13602ec03b41ab0f,ok,,,,8,0,,,,
+191,67552f0b13602ec03b41ab4d,ok,,,,5,0,,,,
+192,67552f0a13602ec03b41a78c,ok,,,,3,0,,,,
+193,67552f0a13602ec03b41a795,ok,,,,5,0,,,,
+194,67552f0a13602ec03b41a796,error,"near ""Table"": syntax error",1,SQLITE_ERROR,3,2,1,Table,1,5
+195,67552f0a13602ec03b41a799,ok,,,,4,0,,,,
+196,67552f0a13602ec03b41a79a,ok,,,,3,0,,,,
+197,67552f0a13602ec03b41a7b2,error,"near ""/"": syntax error",1,SQLITE_ERROR,6,1,6,Entry/Exit_Records,40,46
+198,67552f0a13602ec03b41a7bd,ok,,,,2,0,,,,
+199,67552f0a13602ec03b41a7be,ok,,,,4,0,,,,
+200,67552f0a13602ec03b41a7c2,ok,,,,3,0,,,,
+201,67552f0a13602ec03b41a7d2,ok,,,,7,0,,,,
+202,67552f0a13602ec03b41a7df,ok,,,,3,0,,,,
+203,67552f0a13602ec03b41a7f4,ok,,,,2,0,,,,
+204,67552f0a13602ec03b41a803,ok,,,,7,0,,,,
+205,67552f0a13602ec03b41a805,ok,,,,5,0,,,,
+206,67552f0a13602ec03b41a80b,ok,,,,5,0,,,,
+207,67552f0a13602ec03b41a80c,ok,,,,3,0,,,,
+208,67552f0a13602ec03b41a80d,ok,,,,4,0,,,,
+209,67552f0a13602ec03b41a80e,ok,,,,3,0,,,,
+210,67552f0a13602ec03b41a812,ok,,,,4,0,,,,
+211,67552f0a13602ec03b41a816,ok,,,,5,0,,,,
+212,67552f0a13602ec03b41a81f,ok,,,,3,0,,,,
+213,67552f0a13602ec03b41a82c,ok,,,,2,0,,,,
+214,67552f0a13602ec03b41a82d,ok,,,,4,0,,,,
+215,67552f0a13602ec03b41a838,ok,,,,3,0,,,,
+216,67552f0a13602ec03b41a83b,ok,,,,4,0,,,,
+217,67552f0a13602ec03b41a845,ok,,,,4,0,,,,
+218,67552f0a13602ec03b41a84a,error,"near ""Transaction"": syntax error",1,SQLITE_ERROR,3,1,3,Transaction,16,27
+219,67552f0a13602ec03b41a84c,ok,,,,6,0,,,,
+220,67552f0a13602ec03b41a850,ok,,,,5,0,,,,
+221,67552f0a13602ec03b41a855,ok,,,,3,0,,,,
+222,67552f0a13602ec03b41a85a,ok,,,,3,0,,,,
+223,67552f0a13602ec03b41a874,ok,,,,4,0,,,,
+224,67552f0a13602ec03b41a877,ok,,,,4,0,,,,
+225,67552f0a13602ec03b41a87e,ok,,,,5,0,,,,
+226,67552f0a13602ec03b41a87f,ok,,,,6,0,,,,
+227,67552f0a13602ec03b41a883,ok,,,,3,0,,,,
+228,67552f0a13602ec03b41a886,ok,,,,11,0,,,,
+229,67552f0a13602ec03b41a88c,ok,,,,6,0,,,,
+230,67552f0a13602ec03b41a89e,ok,,,,2,0,,,,
+231,67552f0a13602ec03b41a8a4,ok,,,,3,0,,,,
+232,67552f0a13602ec03b41a8a5,ok,,,,3,0,,,,
+233,67552f0a13602ec03b41a8ac,error,"near ""Order"": syntax error",1,SQLITE_ERROR,7,1,6,Order,32,46
+234,67552f0a13602ec03b41a8ad,ok,,,,4,0,,,,
+235,67552f0a13602ec03b41a8af,ok,,,,4,0,,,,
+236,67552f0a13602ec03b41a8b1,error,"near ""-"": syntax error",1,SQLITE_ERROR,5,3,3,E-book,15,22
+237,67552f0a13602ec03b41a8b2,ok,,,,2,0,,,,
+238,67552f0a13602ec03b41a8b7,ok,,,,3,0,,,,
+239,67552f0a13602ec03b41a8bc,ok,,,,5,0,,,,
+240,67552f0a13602ec03b41a8be,ok,,,,5,0,,,,
+241,67552f0a13602ec03b41a8c3,ok,,,,3,0,,,,
+242,67552f0a13602ec03b41a8c8,ok,,,,2,0,,,,
+243,67552f0a13602ec03b41a8c9,ok,,,,3,0,,,,
+244,67552f0a13602ec03b41a8d7,error,"near ""Order"": syntax error",1,SQLITE_ERROR,4,1,4,Order,27,37
+245,67552f0a13602ec03b41a8d9,ok,,,,6,0,,,,
+246,67552f0a13602ec03b41a8dc,ok,,,,4,0,,,,
+247,67552f0a13602ec03b41a8e7,ok,,,,4,0,,,,
+248,67552f0a13602ec03b41a8e8,ok,,,,7,0,,,,
+249,67552f0a13602ec03b41a8ea,ok,,,,6,0,,,,
+250,67552f0a13602ec03b41a8eb,ok,,,,3,0,,,,
+251,67552f0a13602ec03b41a8ee,ok,,,,2,0,,,,
+252,67552f0a13602ec03b41a8f0,error,"near ""Order"": syntax error",1,SQLITE_ERROR,5,2,4,Order,32,42
+253,67552f0a13602ec03b41a8f1,ok,,,,5,0,,,,
+254,67552f0a13602ec03b41a8f5,ok,,,,5,0,,,,
+255,67552f0a13602ec03b41a8f6,ok,,,,3,0,,,,
+256,67552f0a13602ec03b41a8f8,ok,,,,9,0,,,,
+257,67552f0a13602ec03b41a8fa,ok,,,,3,0,,,,
+258,67552f0a13602ec03b41a8fb,ok,,,,3,0,,,,
+259,67552f0a13602ec03b41a8ff,ok,,,,5,0,,,,
+260,67552f0a13602ec03b41a900,ok,,,,8,0,,,,
+261,67552f0a13602ec03b41a902,ok,,,,8,0,,,,
+262,67552f0a13602ec03b41a910,ok,,,,2,0,,,,
+263,67552f0a13602ec03b41a91c,ok,,,,3,0,,,,
+264,67552f0a13602ec03b41a91d,ok,,,,8,0,,,,
+265,67552f0a13602ec03b41a923,ok,,,,5,0,,,,
+266,67552f0a13602ec03b41a928,ok,,,,5,0,,,,
+267,67552f0a13602ec03b41a92a,ok,,,,2,0,,,,
+268,67552f0a13602ec03b41a938,ok,,,,3,0,,,,
+269,67552f0a13602ec03b41a939,ok,,,,4,0,,,,
+270,67552f0a13602ec03b41a93a,ok,,,,3,0,,,,
+271,67552f0a13602ec03b41a93e,ok,,,,4,0,,,,
+272,67552f0a13602ec03b41a940,ok,,,,4,0,,,,
+273,67552f0a13602ec03b41a941,error,"near ""Order"": syntax error",1,SQLITE_ERROR,4,2,3,Order,18,24
+274,67552f0a13602ec03b41a948,ok,,,,8,0,,,,
+275,67552f0a13602ec03b41a949,ok,,,,4,0,,,,
+276,67552f0a13602ec03b41a94d,error,"near ""-"": syntax error",1,SQLITE_ERROR,4,1,2,User_Account,11,23
+277,67552f0a13602ec03b41a950,ok,,,,7,0,,,,
+278,67552f0a13602ec03b41a953,ok,,,,8,0,,,,
+279,67552f0a13602ec03b41a954,ok,,,,7,0,,,,
+280,67552f0a13602ec03b41a961,ok,,,,5,0,,,,
+281,67552f0a13602ec03b41a962,ok,,,,5,0,,,,
+282,67552f0a13602ec03b41a963,ok,,,,4,0,,,,
+283,67552f0a13602ec03b41a964,ok,,,,3,0,,,,
+284,67552f0a13602ec03b41a965,ok,,,,3,0,,,,
+285,67552f0a13602ec03b41a966,ok,,,,4,0,,,,
+286,67552f0a13602ec03b41a96d,ok,,,,6,0,,,,
+287,67552f0a13602ec03b41a973,ok,,,,3,0,,,,
+288,67552f0a13602ec03b41a976,ok,,,,3,0,,,,
+289,67552f0a13602ec03b41a979,ok,,,,5,0,,,,
+290,67552f0a13602ec03b41a97c,ok,,,,7,0,,,,
+291,67552f0a13602ec03b41a982,ok,,,,4,0,,,,
+292,67552f0a13602ec03b41a98a,ok,,,,5,0,,,,
+293,67552f0a13602ec03b41a98d,ok,,,,3,0,,,,
+294,67552f0a13602ec03b41a99a,error,"unrecognized token: ""'s_treatment_information VARCHAR(255),
+    registration_category_ID INTEGER,
+    ward_ID INTEGER
+);
+
+CREATE TABLE ward (
+    ward_ID INTEGER PRIMARY KEY,
+    ward_information VARCHAR(255)
+);
+
+CREATE TABLE registration_category (
+    registration_category_ID INTEGER PRIMARY KEY,
+    registration_information VARCHAR(255)
+);
+
+CREATE TABLE drug (
+    drug_ID INTEGER PRIMARY KEY,
+    drug_information VARCHAR(255)
+);
+
+CREATE TABLE prescription (
+    drug_ID INTEGER NOT NULL,
+    patient_ID INTEGER NOT NULL,
+    PRIMARY KEY (drug_ID, patient_ID),
+    FOREIGN KEY (drug_ID) REFERENCES drug(drug_ID),
+    FOREIGN KEY (patient_ID) REFERENCES patient(patient_ID)
+);""",1,SQLITE_ERROR,5,1,1,patient,1,10
+295,67552f0a13602ec03b41a99f,error,"near ""Order"": syntax error",1,SQLITE_ERROR,4,1,4,Order,27,38
+296,67552f0a13602ec03b41a9a2,ok,,,,3,0,,,,
+297,67552f0a13602ec03b41a9aa,ok,,,,7,0,,,,
+298,67552f0a13602ec03b41a9af,error,"near ""Table"": syntax error",1,SQLITE_ERROR,7,4,2,Table,8,11
+299,67552f0a13602ec03b41a9b6,ok,,,,6,0,,,,
+300,67552f0a13602ec03b41a9bc,ok,,,,9,0,,,,
+301,67552f0a13602ec03b41a9bd,ok,,,,6,0,,,,
+302,67552f0a13602ec03b41a9c0,ok,,,,5,0,,,,
+303,67552f0a13602ec03b41a9cf,ok,,,,3,0,,,,
+304,67552f0a13602ec03b41a9d4,error,"near ""Order"": syntax error",1,SQLITE_ERROR,6,2,4,Order,23,29
+305,67552f0a13602ec03b41a9d8,ok,,,,8,0,,,,
+306,67552f0a13602ec03b41a9dd,ok,,,,3,0,,,,
+307,67552f0a13602ec03b41a9e6,ok,,,,6,0,,,,
+308,67552f0a13602ec03b41a9f3,error,"unrecognized token: ""'s_Last_Login DATETIME,
+    User_ID INTEGER PRIMARY KEY,
+    User_IP_Address VARCHAR(255),
+    User_Port_Number INTEGER,
+    Username VARCHAR(255)
+);
+
+CREATE TABLE Server_Configuration_Table (
+    Maximum_Client_Connections INTEGER,
+    Protocol_Used VARCHAR(255),
+    Receive_Buffer_Size INTEGER,
+    Server_ID INTEGER PRIMARY KEY,
+    Server_IP_Address VARCHAR(255),
+    Server_Port_Number INTEGER
+);
+
+CREATE TABLE Chat_Record_Table (
+    Message_Content_and_Sending_Time VARCHAR(255),
+    Message_ID INTEGER PRIMARY KEY,
+    Receiver_ID INTEGER NOT NULL,
+    Sender_ID INTEGER NOT NULL,
+    User_ID INTEGER,
+    FOREIGN KEY (Receiver_ID) REFERENCES User_Table(User_ID),
+    FOREIGN KEY (Sender_ID) REFERENCES User_Table(User_ID)
+);""",1,SQLITE_ERROR,3,1,1,User_Table,1,9
+309,67552f0a13602ec03b41a9f6,ok,,,,10,0,,,,
+310,67552f0a13602ec03b41a9ff,ok,,,,4,0,,,,
+311,67552f0a13602ec03b41aa02,error,"near ""Order"": syntax error",1,SQLITE_ERROR,5,2,3,Order,24,31
+312,67552f0a13602ec03b41aa04,ok,,,,3,0,,,,
+313,67552f0a13602ec03b41aa07,ok,,,,5,0,,,,
+314,67552f0b13602ec03b41aa0c,ok,,,,7,0,,,,
+315,67552f0b13602ec03b41aa10,ok,,,,4,0,,,,
+316,67552f0b13602ec03b41aa15,ok,,,,7,0,,,,
+317,67552f0b13602ec03b41aa18,ok,,,,5,0,,,,
+318,67552f0b13602ec03b41aa19,ok,,,,6,0,,,,
+319,67552f0b13602ec03b41aa2b,ok,,,,6,0,,,,
+320,67552f0b13602ec03b41aa32,ok,,,,6,0,,,,
+321,67552f0b13602ec03b41aa39,ok,,,,4,0,,,,
+322,67552f0b13602ec03b41aa3a,ok,,,,5,0,,,,
+323,67552f0b13602ec03b41aa3d,ok,,,,6,0,,,,
+324,67552f0b13602ec03b41aa43,ok,,,,5,0,,,,
+325,67552f0b13602ec03b41aa44,error,"near ""Order"": syntax error",1,SQLITE_ERROR,6,3,4,Order,27,37
+326,67552f0b13602ec03b41aa45,ok,,,,5,0,,,,
+327,67552f0b13602ec03b41aa49,error,"near ""Group"": syntax error",1,SQLITE_ERROR,6,1,1,Device,1,15
+328,67552f0b13602ec03b41aa4e,ok,,,,3,0,,,,
+329,67552f0b13602ec03b41aa52,error,"near ""-"": syntax error",1,SQLITE_ERROR,5,1,4,Attendance_Record,27,37
+330,67552f0b13602ec03b41aa5a,ok,,,,5,0,,,,
+331,67552f0b13602ec03b41aa5c,ok,,,,9,0,,,,
+332,67552f0b13602ec03b41aa7f,ok,,,,5,0,,,,
+333,67552f0b13602ec03b41aaa6,error,"near ""-"": syntax error",1,SQLITE_ERROR,7,1,7,Stock-out_notification,49,54
+334,67552f0b13602ec03b41aaa7,error,"near ""Order"": syntax error",1,SQLITE_ERROR,5,2,4,Order,30,36
+335,67552f0b13602ec03b41aab2,ok,,,,3,0,,,,
+336,67552f0b13602ec03b41aab5,error,"near ""Order"": syntax error",1,SQLITE_ERROR,6,3,4,Order,29,37
+337,67552f0b13602ec03b41aab6,error,"near ""Order"": syntax error",1,SQLITE_ERROR,4,2,3,Order,23,30
+338,67552f0b13602ec03b41aab7,ok,,,,3,0,,,,
+339,67552f0b13602ec03b41aabd,ok,,,,4,0,,,,
+340,67552f0b13602ec03b41aac3,ok,,,,3,0,,,,
+341,67552f0b13602ec03b41aad3,ok,,,,4,0,,,,
+342,67552f0b13602ec03b41aad7,error,"near ""Order"": syntax error",1,SQLITE_ERROR,9,6,3,Order,14,19
+343,67552f0b13602ec03b41aada,ok,,,,5,0,,,,
+344,67552f0b13602ec03b41aae9,error,"near ""Order"": syntax error",1,SQLITE_ERROR,7,4,4,Order,22,30
+345,67552f0b13602ec03b41aaee,ok,,,,3,0,,,,
+346,67552f0b13602ec03b41aaf7,ok,,,,3,0,,,,
+347,67552f0b13602ec03b41aaf9,error,"near ""Order"": syntax error",1,SQLITE_ERROR,4,1,4,Order,26,36
+348,67552f0b13602ec03b41ab04,ok,,,,4,0,,,,
+349,67552f0b13602ec03b41ab17,ok,,,,11,0,,,,
+350,67552f0b13602ec03b41ab36,ok,,,,3,0,,,,
+351,67552f0b13602ec03b41ab37,ok,,,,4,0,,,,
+352,67552f0b13602ec03b41ab46,ok,,,,3,0,,,,
+353,67552f0b13602ec03b41ab4a,error,"near ""-"": syntax error",1,SQLITE_ERROR,5,1,5,Maintenance_Task,37,45
+354,67552f0b13602ec03b41ab51,ok,,,,5,0,,,,
+355,67552f0a13602ec03b41a7a9,ok,,,,5,0,,,,
+356,67552f0a13602ec03b41a8ce,ok,,,,4,0,,,,
+357,67552f0a13602ec03b41a8d1,ok,,,,4,0,,,,
+358,67552f0a13602ec03b41a8e1,error,"near ""Order"": syntax error",1,SQLITE_ERROR,7,2,3,Order,15,21
+359,67552f0a13602ec03b41a906,ok,,,,5,0,,,,
+360,67552f0a13602ec03b41a951,error,"near ""Check"": syntax error",1,SQLITE_ERROR,5,2,4,attendance_record,28,35
+361,67552f0a13602ec03b41a97f,ok,,,,7,0,,,,
+362,67552f0a13602ec03b41a98b,error,"near ""Transaction"": syntax error",1,SQLITE_ERROR,4,1,3,Transaction,29,41
+363,67552f0a13602ec03b41a9bb,ok,,,,3,0,,,,
+364,67552f0a13602ec03b41a9d6,ok,,,,5,0,,,,
+365,67552f0a13602ec03b41a9de,ok,,,,6,0,,,,
+366,67552f0a13602ec03b41a9fc,ok,,,,6,0,,,,
+367,67552f0b13602ec03b41aa2e,ok,,,,5,0,,,,
+368,67552f0b13602ec03b41aa60,ok,,,,7,0,,,,
+369,67552f0b13602ec03b41aa64,ok,,,,5,0,,,,
+370,67552f0b13602ec03b41aa68,ok,,,,6,0,,,,
+371,67552f0b13602ec03b41aa95,error,"near ""Order"": syntax error",1,SQLITE_ERROR,5,3,3,Order,24,31
+372,67552f0b13602ec03b41aaad,ok,,,,7,0,,,,
+373,67552f0b13602ec03b41aab9,ok,,,,2,0,,,,
+374,67552f0b13602ec03b41aacf,ok,,,,4,0,,,,
+375,67552f0b13602ec03b41ab03,error,"near ""Transaction"": syntax error",1,SQLITE_ERROR,3,1,3,Transaction,15,23
+376,67552f0b13602ec03b41ab0a,ok,,,,4,0,,,,
+377,67552f0b13602ec03b41ab15,error,"near ""Transaction"": syntax error",1,SQLITE_ERROR,3,1,3,Transaction,16,24
+378,67552f0b13602ec03b41ab25,ok,,,,6,0,,,,
+379,67552f0b13602ec03b41ab2c,error,"near ""/"": syntax error",1,SQLITE_ERROR,6,1,4,Income/Expenditure,23,31
+380,67552f0b13602ec03b41ab2f,ok,,,,9,0,,,,
+381,67552f0b13602ec03b41ab53,ok,,,,7,0,,,,

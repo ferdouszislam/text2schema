@@ -1,0 +1,1137 @@
+{
+  "alignment": {
+    "ddl_only_ids": [],
+    "ddl_preserves_logical_subset_order": true,
+    "logical_only_column_entries": 3252,
+    "logical_only_ids": [
+      "67552f0a13602ec03b41a78d",
+      "67552f0a13602ec03b41a78e",
+      "67552f0a13602ec03b41a790",
+      "67552f0a13602ec03b41a792",
+      "67552f0a13602ec03b41a794",
+      "67552f0a13602ec03b41a79c",
+      "67552f0a13602ec03b41a79d",
+      "67552f0a13602ec03b41a7a6",
+      "67552f0a13602ec03b41a7a7",
+      "67552f0a13602ec03b41a7ae",
+      "67552f0a13602ec03b41a7c0",
+      "67552f0a13602ec03b41a7c1",
+      "67552f0a13602ec03b41a7c3",
+      "67552f0a13602ec03b41a7c6",
+      "67552f0a13602ec03b41a7c9",
+      "67552f0a13602ec03b41a7ca",
+      "67552f0a13602ec03b41a7cb",
+      "67552f0a13602ec03b41a7cc",
+      "67552f0a13602ec03b41a7d0",
+      "67552f0a13602ec03b41a7d9",
+      "67552f0a13602ec03b41a7dd",
+      "67552f0a13602ec03b41a7e8",
+      "67552f0a13602ec03b41a7ed",
+      "67552f0a13602ec03b41a7f5",
+      "67552f0a13602ec03b41a7f6",
+      "67552f0a13602ec03b41a7fa",
+      "67552f0a13602ec03b41a7fb",
+      "67552f0a13602ec03b41a808",
+      "67552f0a13602ec03b41a811",
+      "67552f0a13602ec03b41a818",
+      "67552f0a13602ec03b41a81b",
+      "67552f0a13602ec03b41a81c",
+      "67552f0a13602ec03b41a827",
+      "67552f0a13602ec03b41a828",
+      "67552f0a13602ec03b41a829",
+      "67552f0a13602ec03b41a830",
+      "67552f0a13602ec03b41a832",
+      "67552f0a13602ec03b41a833",
+      "67552f0a13602ec03b41a839",
+      "67552f0a13602ec03b41a83d",
+      "67552f0a13602ec03b41a83f",
+      "67552f0a13602ec03b41a844",
+      "67552f0a13602ec03b41a854",
+      "67552f0a13602ec03b41a85f",
+      "67552f0a13602ec03b41a865",
+      "67552f0a13602ec03b41a884",
+      "67552f0a13602ec03b41a88f",
+      "67552f0a13602ec03b41a896",
+      "67552f0a13602ec03b41a89a",
+      "67552f0a13602ec03b41a89b",
+      "67552f0a13602ec03b41a8ab",
+      "67552f0a13602ec03b41a8b0",
+      "67552f0a13602ec03b41a8b6",
+      "67552f0a13602ec03b41a8b8",
+      "67552f0a13602ec03b41a8bf",
+      "67552f0a13602ec03b41a8c2",
+      "67552f0a13602ec03b41a8c6",
+      "67552f0a13602ec03b41a8db",
+      "67552f0a13602ec03b41a8dd",
+      "67552f0a13602ec03b41a8e3",
+      "67552f0a13602ec03b41a8fe",
+      "67552f0a13602ec03b41a904",
+      "67552f0a13602ec03b41a907",
+      "67552f0a13602ec03b41a912",
+      "67552f0a13602ec03b41a914",
+      "67552f0a13602ec03b41a915",
+      "67552f0a13602ec03b41a91a",
+      "67552f0a13602ec03b41a91f",
+      "67552f0a13602ec03b41a925",
+      "67552f0a13602ec03b41a927",
+      "67552f0a13602ec03b41a92b",
+      "67552f0a13602ec03b41a92e",
+      "67552f0a13602ec03b41a932",
+      "67552f0a13602ec03b41a934",
+      "67552f0a13602ec03b41a93c",
+      "67552f0a13602ec03b41a943",
+      "67552f0a13602ec03b41a944",
+      "67552f0a13602ec03b41a94c",
+      "67552f0a13602ec03b41a94e",
+      "67552f0a13602ec03b41a952",
+      "67552f0a13602ec03b41a955",
+      "67552f0a13602ec03b41a957",
+      "67552f0a13602ec03b41a95b",
+      "67552f0a13602ec03b41a95f",
+      "67552f0a13602ec03b41a96a",
+      "67552f0a13602ec03b41a97d",
+      "67552f0a13602ec03b41a984",
+      "67552f0a13602ec03b41a985",
+      "67552f0a13602ec03b41a98c",
+      "67552f0a13602ec03b41a991",
+      "67552f0a13602ec03b41a9a1",
+      "67552f0a13602ec03b41a9a9",
+      "67552f0a13602ec03b41a9ad",
+      "67552f0a13602ec03b41a9b1",
+      "67552f0a13602ec03b41a9b9",
+      "67552f0a13602ec03b41a9c5",
+      "67552f0a13602ec03b41a9ca",
+      "67552f0a13602ec03b41a9cb",
+      "67552f0a13602ec03b41a9d2",
+      "67552f0a13602ec03b41a9d3",
+      "67552f0a13602ec03b41a9e1",
+      "67552f0a13602ec03b41a9e5",
+      "67552f0a13602ec03b41a9e7",
+      "67552f0a13602ec03b41a9ee",
+      "67552f0a13602ec03b41a9f0",
+      "67552f0a13602ec03b41a9fa",
+      "67552f0a13602ec03b41aa03",
+      "67552f0b13602ec03b41aa1b",
+      "67552f0b13602ec03b41aa20",
+      "67552f0b13602ec03b41aa31",
+      "67552f0b13602ec03b41aa36",
+      "67552f0b13602ec03b41aa41",
+      "67552f0b13602ec03b41aa4f",
+      "67552f0b13602ec03b41aa51",
+      "67552f0b13602ec03b41aa58",
+      "67552f0b13602ec03b41aa59",
+      "67552f0b13602ec03b41aa67",
+      "67552f0b13602ec03b41aa6a",
+      "67552f0b13602ec03b41aa6b",
+      "67552f0b13602ec03b41aa74",
+      "67552f0b13602ec03b41aa80",
+      "67552f0b13602ec03b41aa82",
+      "67552f0b13602ec03b41aa83",
+      "67552f0b13602ec03b41aa8e",
+      "67552f0b13602ec03b41aa94",
+      "67552f0b13602ec03b41aa98",
+      "67552f0b13602ec03b41aa99",
+      "67552f0b13602ec03b41aa9d",
+      "67552f0b13602ec03b41aaac",
+      "67552f0b13602ec03b41aab3",
+      "67552f0b13602ec03b41aad8",
+      "67552f0b13602ec03b41ab08",
+      "67552f0b13602ec03b41ab0e",
+      "67552f0b13602ec03b41ab16",
+      "67552f0b13602ec03b41ab18",
+      "67552f0b13602ec03b41ab1f",
+      "67552f0b13602ec03b41ab26"
+    ],
+    "logical_only_tables": 688,
+    "question_identical": 381,
+    "shared_ids": 381,
+    "shared_logical_column_entries": 8456,
+    "structure_and_keys_identical": 376,
+    "tables_and_columns_identical": 378,
+    "tables_identical": 381
+  },
+  "datasets": {
+    "ddl": {
+      "answer_chars": {
+        "max": 3136,
+        "mean": 1134.2335958005249,
+        "median": 1044,
+        "min": 300,
+        "n": 381,
+        "p05": 535.0,
+        "p25": 748.0,
+        "p75": 1436.0,
+        "p95": 2051.0,
+        "sum": 432143
+      },
+      "answer_words": {
+        "max": 296,
+        "mean": 106.84251968503936,
+        "median": 100,
+        "min": 28,
+        "n": 381,
+        "p05": 51.0,
+        "p25": 71.0,
+        "p75": 135.0,
+        "p95": 188.0,
+        "sum": 40707
+      },
+      "blank_required_fields": {
+        "answer": 0,
+        "id": 0,
+        "question": 0
+      },
+      "column_name_cjk_count": 0,
+      "column_name_non_ascii_count": 0,
+      "columns": {
+        "max": 63,
+        "mean": 22.186351706036746,
+        "median": 21,
+        "min": 5,
+        "n": 381,
+        "p05": 10.0,
+        "p25": 15.0,
+        "p75": 27.0,
+        "p95": 39.0,
+        "sum": 8453
+      },
+      "columns_per_table": {
+        "max": 18,
+        "mean": 4.835812356979405,
+        "median": 5.0,
+        "min": 1,
+        "n": 1748,
+        "p05": 2.0,
+        "p25": 3.0,
+        "p75": 6.0,
+        "p95": 9.0,
+        "sum": 8453
+      },
+      "columns_per_table_extrema": {
+        "max": [
+          {
+            "columns": 18,
+            "dataset": "ddl",
+            "explicit_not_null_columns": 1,
+            "id": "67552f0a13602ec03b41a870",
+            "line": 57,
+            "other_constraints": 0,
+            "parsed_foreign_keys": 1,
+            "primary_key_columns": 1,
+            "primary_key_constraints": 1,
+            "table": "Recipe",
+            "unique_column_names": 18
+          },
+          {
+            "columns": 18,
+            "dataset": "ddl",
+            "explicit_not_null_columns": 2,
+            "id": "67552f0a13602ec03b41a878",
+            "line": 58,
+            "other_constraints": 0,
+            "parsed_foreign_keys": 2,
+            "primary_key_columns": 1,
+            "primary_key_constraints": 1,
+            "table": "Company",
+            "unique_column_names": 18
+          }
+        ],
+        "min": [
+          {
+            "columns": 1,
+            "dataset": "ddl",
+            "explicit_not_null_columns": 0,
+            "id": "67552f0a13602ec03b41a95a",
+            "line": 87,
+            "other_constraints": 0,
+            "parsed_foreign_keys": 0,
+            "primary_key_columns": 1,
+            "primary_key_constraints": 1,
+            "table": "Inspector",
+            "unique_column_names": 1
+          },
+          {
+            "columns": 1,
+            "dataset": "ddl",
+            "explicit_not_null_columns": 0,
+            "id": "67552f0a13602ec03b41a98e",
+            "line": 94,
+            "other_constraints": 0,
+            "parsed_foreign_keys": 0,
+            "primary_key_columns": 1,
+            "primary_key_constraints": 1,
+            "table": "Prescription",
+            "unique_column_names": 1
+          }
+        ]
+      },
+      "composite_foreign_keys": {
+        "max": 0,
+        "mean": 0,
+        "median": 0,
+        "min": 0,
+        "n": 381,
+        "p05": 0.0,
+        "p25": 0.0,
+        "p75": 0.0,
+        "p95": 0.0,
+        "sum": 0
+      },
+      "composite_primary_keys": {
+        "max": 5,
+        "mean": 1.1837270341207349,
+        "median": 1,
+        "min": 0,
+        "n": 381,
+        "p05": 0.0,
+        "p25": 0.0,
+        "p75": 2.0,
+        "p95": 3.0,
+        "sum": 451
+      },
+      "duplicate_answers_exact": [],
+      "duplicate_questions_casefold_whitespace": [],
+      "duplicate_questions_exact": [],
+      "explicit_not_null_columns": 1495,
+      "extrema": {
+        "columns": {
+          "max": [
+            {
+              "id": "67552f0a13602ec03b41a8f3",
+              "line": 80,
+              "value": 63
+            }
+          ],
+          "min": [
+            {
+              "id": "67552f0a13602ec03b41a908",
+              "line": 81,
+              "value": 5
+            }
+          ]
+        },
+        "question_chars": {
+          "max": [
+            {
+              "id": "67552f0a13602ec03b41a878",
+              "line": 58,
+              "value": 3228
+            }
+          ],
+          "min": [
+            {
+              "id": "67552f0a13602ec03b41a805",
+              "line": 205,
+              "value": 261
+            }
+          ]
+        },
+        "question_words": {
+          "max": [
+            {
+              "id": "67552f0a13602ec03b41a918",
+              "line": 84,
+              "value": 440
+            }
+          ],
+          "min": [
+            {
+              "id": "67552f0a13602ec03b41a7bb",
+              "line": 13,
+              "value": 37
+            }
+          ]
+        },
+        "tables": {
+          "max": [
+            {
+              "id": "67552f0a13602ec03b41a886",
+              "line": 228,
+              "value": 11
+            },
+            {
+              "id": "67552f0b13602ec03b41ab17",
+              "line": 349,
+              "value": 11
+            }
+          ],
+          "min": [
+            {
+              "id": "67552f0a13602ec03b41a7f3",
+              "line": 27,
+              "value": 2
+            },
+            {
+              "id": "67552f0a13602ec03b41a826",
+              "line": 40,
+              "value": 2
+            },
+            {
+              "id": "67552f0a13602ec03b41a895",
+              "line": 66,
+              "value": 2
+            },
+            {
+              "id": "67552f0a13602ec03b41a8e5",
+              "line": 76,
+              "value": 2
+            },
+            {
+              "id": "67552f0a13602ec03b41a908",
+              "line": 81,
+              "value": 2
+            },
+            {
+              "id": "67552f0a13602ec03b41a99d",
+              "line": 96,
+              "value": 2
+            },
+            {
+              "id": "67552f0a13602ec03b41a8f9",
+              "line": 162,
+              "value": 2
+            },
+            {
+              "id": "67552f0a13602ec03b41a911",
+              "line": 165,
+              "value": 2
+            },
+            {
+              "id": "67552f0a13602ec03b41a7bd",
+              "line": 198,
+              "value": 2
+            },
+            {
+              "id": "67552f0a13602ec03b41a7f4",
+              "line": 203,
+              "value": 2
+            },
+            {
+              "id": "67552f0a13602ec03b41a82c",
+              "line": 213,
+              "value": 2
+            },
+            {
+              "id": "67552f0a13602ec03b41a89e",
+              "line": 230,
+              "value": 2
+            },
+            {
+              "id": "67552f0a13602ec03b41a8b2",
+              "line": 237,
+              "value": 2
+            },
+            {
+              "id": "67552f0a13602ec03b41a8c8",
+              "line": 242,
+              "value": 2
+            },
+            {
+              "id": "67552f0a13602ec03b41a8ee",
+              "line": 251,
+              "value": 2
+            },
+            {
+              "id": "67552f0a13602ec03b41a910",
+              "line": 262,
+              "value": 2
+            },
+            {
+              "id": "67552f0a13602ec03b41a92a",
+              "line": 267,
+              "value": 2
+            },
+            {
+              "id": "67552f0b13602ec03b41aab9",
+              "line": 373,
+              "value": 2
+            }
+          ]
+        }
+      },
+      "independent_line_inventory_matches": 381,
+      "issues": {
+        "fk_target_not_entire_declared_pk": {
+          "occurrences": 7,
+          "schemas": 4
+        },
+        "literal_null_type": {
+          "occurrences": 10,
+          "schemas": 2
+        },
+        "missing_primary_key": {
+          "occurrences": 2,
+          "schemas": 2
+        },
+        "pk_column_missing": {
+          "occurrences": 7,
+          "schemas": 6
+        },
+        "sqlite_create_error": {
+          "occurrences": 66,
+          "schemas": 66
+        }
+      },
+      "metadata": {
+        "assign_to": {
+          "cjk_records": 0,
+          "nonempty": 381,
+          "unique": 11
+        },
+        "assign_to_round2": {
+          "cjk_records": 0,
+          "nonempty": 381,
+          "unique": 11
+        },
+        "remarks": {
+          "cjk_records": 189,
+          "nonempty": 225,
+          "unique": 188
+        }
+      },
+      "normalized_reference_issues": {
+        "fk_target_not_entire_declared_pk": {
+          "occurrences": 7,
+          "schemas": 4
+        },
+        "missing_primary_key": {
+          "occurrences": 2,
+          "schemas": 2
+        },
+        "pk_column_missing": {
+          "occurrences": 7,
+          "schemas": 6
+        }
+      },
+      "other_constraint_declarations": 0,
+      "parsed_foreign_keys": {
+        "max": 15,
+        "mean": 3.926509186351706,
+        "median": 3,
+        "min": 0,
+        "n": 381,
+        "p05": 1.0,
+        "p25": 2.0,
+        "p75": 5.0,
+        "p95": 8.0,
+        "sum": 1496
+      },
+      "primary_key_constraints": {
+        "max": 11,
+        "mean": 4.582677165354331,
+        "median": 4,
+        "min": 2,
+        "n": 381,
+        "p05": 3.0,
+        "p25": 3.0,
+        "p75": 5.0,
+        "p95": 8.0,
+        "sum": 1746
+      },
+      "question_chars": {
+        "max": 3228,
+        "mean": 978.9291338582677,
+        "median": 848,
+        "min": 261,
+        "n": 381,
+        "p05": 390.0,
+        "p25": 609.0,
+        "p75": 1162.0,
+        "p95": 2125.0,
+        "sum": 372972
+      },
+      "question_cjk_records": 0,
+      "question_lines": {
+        "max": 31,
+        "mean": 4.7637795275590555,
+        "median": 1,
+        "min": 1,
+        "n": 381,
+        "p05": 1.0,
+        "p25": 1.0,
+        "p75": 7.0,
+        "p95": 17.0,
+        "sum": 1815
+      },
+      "question_non_ascii_records": 30,
+      "question_utf8_bytes": {
+        "max": 3232,
+        "mean": 979.1627296587926,
+        "median": 848,
+        "min": 261,
+        "n": 381,
+        "p05": 390.0,
+        "p25": 609.0,
+        "p75": 1162.0,
+        "p95": 2125.0,
+        "sum": 373061
+      },
+      "question_words": {
+        "max": 440,
+        "mean": 138.10761154855643,
+        "median": 120,
+        "min": 37,
+        "n": 381,
+        "p05": 55.0,
+        "p25": 87.0,
+        "p75": 165.0,
+        "p95": 308.0,
+        "sum": 52619
+      },
+      "schemas_with_composite_primary_keys": 274,
+      "schemas_with_exact_reference_issues": 8,
+      "schemas_with_normalized_reference_issues": 8,
+      "schemas_with_zero_parsed_foreign_keys": 4,
+      "self_foreign_keys": {
+        "max": 3,
+        "mean": 0.04461942257217848,
+        "median": 0,
+        "min": 0,
+        "n": 381,
+        "p05": 0.0,
+        "p25": 0.0,
+        "p75": 0.0,
+        "p95": 0.0,
+        "sum": 17
+      },
+      "sqlite_create_ok": 315,
+      "sqlite_error_counts": {
+        "near \"-\": syntax error": 12,
+        "near \"/\": syntax error": 2,
+        "near \"Check\": syntax error": 1,
+        "near \"Group\": syntax error": 1,
+        "near \"Order\": syntax error": 33,
+        "near \"Table\": syntax error": 2,
+        "near \"Transaction\": syntax error": 6,
+        "near \"Update\": syntax error": 1,
+        "no such column: Adding_time": 1,
+        "no such column: Device_ID": 1,
+        "no such column: Employee_ID": 1,
+        "no such column: Information_ID": 1,
+        "no such column: Record_ID": 1,
+        "no such column: clock": 1,
+        "unrecognized token: \"'s_Last_Login DATETIME,\n    User_ID INTEGER PRIMARY KEY,\n    User_IP_Address VARCHAR(255),\n    User_Port_Number INTEGER,\n    Username VARCHAR(255)\n);\n\nCREATE TABLE Server_Configuration_Table (\n    Maximum_Client_Connections INTEGER,\n    Protocol_Used VARCHAR(255),\n    Receive_Buffer_Size INTEGER,\n    Server_ID INTEGER PRIMARY KEY,\n    Server_IP_Address VARCHAR(255),\n    Server_Port_Number INTEGER\n);\n\nCREATE TABLE Chat_Record_Table (\n    Message_Content_and_Sending_Time VARCHAR(255),\n    Message_ID INTEGER PRIMARY KEY,\n    Receiver_ID INTEGER NOT NULL,\n    Sender_ID INTEGER NOT NULL,\n    User_ID INTEGER,\n    FOREIGN KEY (Receiver_ID) REFERENCES User_Table(User_ID),\n    FOREIGN KEY (Sender_ID) REFERENCES User_Table(User_ID)\n);\"": 1,
+        "unrecognized token: \"'s_treatment_information VARCHAR(255),\n    registration_category_ID INTEGER,\n    ward_ID INTEGER\n);\n\nCREATE TABLE ward (\n    ward_ID INTEGER PRIMARY KEY,\n    ward_information VARCHAR(255)\n);\n\nCREATE TABLE registration_category (\n    registration_category_ID INTEGER PRIMARY KEY,\n    registration_information VARCHAR(255)\n);\n\nCREATE TABLE drug (\n    drug_ID INTEGER PRIMARY KEY,\n    drug_information VARCHAR(255)\n);\n\nCREATE TABLE prescription (\n    drug_ID INTEGER NOT NULL,\n    patient_ID INTEGER NOT NULL,\n    PRIMARY KEY (drug_ID, patient_ID),\n    FOREIGN KEY (drug_ID) REFERENCES drug(drug_ID),\n    FOREIGN KEY (patient_ID) REFERENCES patient(patient_ID)\n);\"": 1
+      },
+      "table_name_cjk_count": 0,
+      "table_name_non_ascii_count": 0,
+      "tables": {
+        "max": 11,
+        "mean": 4.587926509186352,
+        "median": 4,
+        "min": 2,
+        "n": 381,
+        "p05": 3.0,
+        "p25": 3.0,
+        "p75": 5.0,
+        "p95": 8.0,
+        "sum": 1748
+      },
+      "type_counts": {
+        "BLOB": 29,
+        "BOOL": 69,
+        "DATETIME": 1062,
+        "FLOAT": 494,
+        "INTEGER": 3191,
+        "NULL": 10,
+        "VARCHAR(255)": 3598
+      },
+      "unique_column_names_within_tables_total": 8453
+    },
+    "logical": {
+      "answer_chars": {
+        "max": 3125,
+        "mean": 894.2471042471043,
+        "median": 831.5,
+        "min": 270,
+        "n": 518,
+        "p05": 402.85,
+        "p25": 591.25,
+        "p75": 1087.25,
+        "p95": 1587.6499999999996,
+        "sum": 463220
+      },
+      "answer_words": {
+        "max": 195,
+        "mean": 50.28185328185328,
+        "median": 47.0,
+        "min": 5,
+        "n": 518,
+        "p05": 22.0,
+        "p25": 32.0,
+        "p75": 64.0,
+        "p95": 92.89999999999986,
+        "sum": 26046
+      },
+      "blank_required_fields": {
+        "answer": 0,
+        "id": 0,
+        "question": 0
+      },
+      "column_name_non_ascii_count": 0,
+      "columns": {
+        "max": 71,
+        "mean": 22.602316602316602,
+        "median": 21.0,
+        "min": 5,
+        "n": 518,
+        "p05": 10.0,
+        "p25": 15.0,
+        "p75": 27.0,
+        "p95": 41.0,
+        "sum": 11708
+      },
+      "columns_per_table": {
+        "max": 18,
+        "mean": 4.80623973727422,
+        "median": 4.0,
+        "min": 1,
+        "n": 2436,
+        "p05": 2.0,
+        "p25": 3.0,
+        "p75": 6.0,
+        "p95": 9.0,
+        "sum": 11708
+      },
+      "columns_per_table_extrema": {
+        "max": [
+          {
+            "columns": 18,
+            "dataset": "logical",
+            "explicit_not_null_columns": "",
+            "id": "67552f0a13602ec03b41a870",
+            "line": 85,
+            "other_constraints": "",
+            "parsed_foreign_keys": 1,
+            "primary_key_columns": 1,
+            "primary_key_constraints": 1,
+            "table": "Recipe",
+            "unique_column_names": 18
+          },
+          {
+            "columns": 18,
+            "dataset": "logical",
+            "explicit_not_null_columns": "",
+            "id": "67552f0a13602ec03b41a878",
+            "line": 86,
+            "other_constraints": "",
+            "parsed_foreign_keys": 2,
+            "primary_key_columns": 1,
+            "primary_key_constraints": 1,
+            "table": "Company",
+            "unique_column_names": 18
+          }
+        ],
+        "min": [
+          {
+            "columns": 1,
+            "dataset": "logical",
+            "explicit_not_null_columns": "",
+            "id": "67552f0a13602ec03b41a95a",
+            "line": 126,
+            "other_constraints": "",
+            "parsed_foreign_keys": 0,
+            "primary_key_columns": 1,
+            "primary_key_constraints": 1,
+            "table": "Inspector",
+            "unique_column_names": 1
+          },
+          {
+            "columns": 1,
+            "dataset": "logical",
+            "explicit_not_null_columns": "",
+            "id": "67552f0a13602ec03b41a98e",
+            "line": 139,
+            "other_constraints": "",
+            "parsed_foreign_keys": 0,
+            "primary_key_columns": 1,
+            "primary_key_constraints": 1,
+            "table": "Prescription",
+            "unique_column_names": 1
+          },
+          {
+            "columns": 1,
+            "dataset": "logical",
+            "explicit_not_null_columns": "",
+            "id": "67552f0a13602ec03b41a95b",
+            "line": 377,
+            "other_constraints": "",
+            "parsed_foreign_keys": 0,
+            "primary_key_columns": 2,
+            "primary_key_constraints": 1,
+            "table": "Article",
+            "unique_column_names": 1
+          },
+          {
+            "columns": 1,
+            "dataset": "logical",
+            "explicit_not_null_columns": "",
+            "id": "67552f0a13602ec03b41a95b",
+            "line": 377,
+            "other_constraints": "",
+            "parsed_foreign_keys": 0,
+            "primary_key_columns": 2,
+            "primary_key_constraints": 1,
+            "table": "Tag",
+            "unique_column_names": 1
+          }
+        ]
+      },
+      "composite_foreign_keys": {
+        "max": 2,
+        "mean": 0.003861003861003861,
+        "median": 0.0,
+        "min": 0,
+        "n": 518,
+        "p05": 0.0,
+        "p25": 0.0,
+        "p75": 0.0,
+        "p95": 0.0,
+        "sum": 2
+      },
+      "composite_primary_keys": {
+        "max": 6,
+        "mean": 1.2316602316602316,
+        "median": 1.0,
+        "min": 0,
+        "n": 518,
+        "p05": 0.0,
+        "p25": 0.0,
+        "p75": 2.0,
+        "p95": 3.0,
+        "sum": 638
+      },
+      "duplicate_answers_exact": [],
+      "duplicate_questions_casefold_whitespace": [],
+      "duplicate_questions_exact": [],
+      "explicit_not_null_columns": null,
+      "extrema": {
+        "columns": {
+          "max": [
+            {
+              "id": "67552f0a13602ec03b41a9cb",
+              "line": 406,
+              "value": 71
+            }
+          ],
+          "min": [
+            {
+              "id": "67552f0a13602ec03b41a908",
+              "line": 115,
+              "value": 5
+            }
+          ]
+        },
+        "question_chars": {
+          "max": [
+            {
+              "id": "67552f0a13602ec03b41a9cb",
+              "line": 406,
+              "value": 3577
+            }
+          ],
+          "min": [
+            {
+              "id": "67552f0a13602ec03b41a805",
+              "line": 281,
+              "value": 261
+            }
+          ]
+        },
+        "question_words": {
+          "max": [
+            {
+              "id": "67552f0a13602ec03b41a9cb",
+              "line": 406,
+              "value": 476
+            }
+          ],
+          "min": [
+            {
+              "id": "67552f0a13602ec03b41a7bb",
+              "line": 20,
+              "value": 37
+            }
+          ]
+        },
+        "tables": {
+          "max": [
+            {
+              "id": "67552f0a13602ec03b41a9cb",
+              "line": 406,
+              "value": 18
+            }
+          ],
+          "min": [
+            {
+              "id": "67552f0a13602ec03b41a8b8",
+              "line": 319,
+              "value": 1
+            }
+          ]
+        }
+      },
+      "issues": {
+        "duplicate_column": {
+          "occurrences": 3,
+          "schemas": 3
+        },
+        "fk_source_column_missing": {
+          "occurrences": 41,
+          "schemas": 32
+        },
+        "fk_target_column_missing": {
+          "occurrences": 51,
+          "schemas": 29
+        },
+        "fk_target_not_entire_declared_pk": {
+          "occurrences": 73,
+          "schemas": 39
+        },
+        "fk_target_table_missing": {
+          "occurrences": 34,
+          "schemas": 16
+        },
+        "list_encoded_composite_fk": {
+          "occurrences": 2,
+          "schemas": 1
+        },
+        "non_string_fk_target_column": {
+          "occurrences": 2,
+          "schemas": 1
+        },
+        "pk_column_missing": {
+          "occurrences": 39,
+          "schemas": 26
+        }
+      },
+      "normalized_reference_issues": {
+        "duplicate_column": {
+          "occurrences": 3,
+          "schemas": 3
+        },
+        "fk_source_column_missing": {
+          "occurrences": 33,
+          "schemas": 25
+        },
+        "fk_target_column_missing": {
+          "occurrences": 36,
+          "schemas": 22
+        },
+        "fk_target_not_entire_declared_pk": {
+          "occurrences": 55,
+          "schemas": 31
+        },
+        "fk_target_table_missing": {
+          "occurrences": 34,
+          "schemas": 16
+        },
+        "pk_column_missing": {
+          "occurrences": 25,
+          "schemas": 20
+        }
+      },
+      "other_constraint_declarations": null,
+      "parsed_foreign_keys": {
+        "max": 18,
+        "mean": 4.142857142857143,
+        "median": 4.0,
+        "min": 0,
+        "n": 518,
+        "p05": 1.0,
+        "p25": 2.0,
+        "p75": 6.0,
+        "p95": 9.0,
+        "sum": 2146
+      },
+      "primary_key_constraints": {
+        "max": 18,
+        "mean": 4.702702702702703,
+        "median": 4.0,
+        "min": 1,
+        "n": 518,
+        "p05": 3.0,
+        "p25": 3.0,
+        "p75": 6.0,
+        "p95": 8.0,
+        "sum": 2436
+      },
+      "question_chars": {
+        "max": 3577,
+        "mean": 983.565637065637,
+        "median": 868.5,
+        "min": 261,
+        "n": 518,
+        "p05": 390.85,
+        "p25": 614.5,
+        "p75": 1163.5,
+        "p95": 2091.5,
+        "sum": 509487
+      },
+      "question_cjk_records": 0,
+      "question_lines": {
+        "max": 31,
+        "mean": 4.749034749034749,
+        "median": 1.0,
+        "min": 1,
+        "n": 518,
+        "p05": 1.0,
+        "p25": 1.0,
+        "p75": 7.0,
+        "p95": 17.149999999999977,
+        "sum": 2460
+      },
+      "question_non_ascii_records": 38,
+      "question_utf8_bytes": {
+        "max": 3577,
+        "mean": 983.7722007722008,
+        "median": 868.5,
+        "min": 261,
+        "n": 518,
+        "p05": 390.85,
+        "p25": 614.5,
+        "p75": 1163.5,
+        "p95": 2091.5,
+        "sum": 509594
+      },
+      "question_words": {
+        "max": 476,
+        "mean": 138.59459459459458,
+        "median": 122.5,
+        "min": 37,
+        "n": 518,
+        "p05": 55.0,
+        "p25": 89.0,
+        "p75": 164.0,
+        "p95": 302.0,
+        "sum": 71792
+      },
+      "raw_fk_source_entries": 2147,
+      "raw_fk_target_entries": 2148,
+      "schemas_with_composite_primary_keys": 379,
+      "schemas_with_exact_reference_issues": 72,
+      "schemas_with_normalized_reference_issues": 63,
+      "schemas_with_zero_parsed_foreign_keys": 5,
+      "self_foreign_keys": {
+        "max": 3,
+        "mean": 0.055984555984555984,
+        "median": 0.0,
+        "min": 0,
+        "n": 518,
+        "p05": 0.0,
+        "p25": 0.0,
+        "p75": 0.0,
+        "p95": 0.0,
+        "sum": 29
+      },
+      "table_name_non_ascii_count": 0,
+      "tables": {
+        "max": 18,
+        "mean": 4.702702702702703,
+        "median": 4.0,
+        "min": 1,
+        "n": 518,
+        "p05": 3.0,
+        "p25": 3.0,
+        "p75": 6.0,
+        "p95": 8.0,
+        "sum": 2436
+      },
+      "type_counts": {
+        "": 11708
+      },
+      "unique_column_names_within_tables_total": 11705
+    }
+  },
+  "domain_counts": {
+    "交通运输、仓储和邮政业": 15,
+    "住宿和餐饮业": 17,
+    "信息传输、软件和信息技术服务业": 70,
+    "公共管理、社会保障和社会组织": 10,
+    "农、林、牧、渔业": 13,
+    "制造业": 7,
+    "卫生和社会工作": 15,
+    "居民服务、修理和其他服务业": 19,
+    "建筑业": 7,
+    "房地产业": 5,
+    "批发和零售业": 37,
+    "教育": 38,
+    "文化、体育和娱乐业": 43,
+    "水利、环境和公共设施管理业": 10,
+    "生活生产和供应业": 8,
+    "科学研究和技术服务业": 11,
+    "租赁和商务服务业": 33,
+    "采矿业": 3,
+    "金融业": 20
+  },
+  "files": {
+    "ddl": {
+      "blank_lines": 0,
+      "bytes": 908416,
+      "duplicate_object_keys": [],
+      "field_types": {
+        "answer": {
+          "str": 381
+        },
+        "assign_to": {
+          "str": 381
+        },
+        "assign_to_round2": {
+          "str": 381
+        },
+        "domain": {
+          "list": 381
+        },
+        "id": {
+          "str": 381
+        },
+        "question": {
+          "str": 381
+        },
+        "remarks": {
+          "str": 381
+        }
+      },
+      "fields": {
+        "answer": 381,
+        "assign_to": 381,
+        "assign_to_round2": 381,
+        "domain": 381,
+        "id": 381,
+        "question": 381,
+        "remarks": 381
+      },
+      "filename": "annotation_ddl.jsonl",
+      "physical_lines": 381,
+      "records": 381,
+      "sha256": "ce17d9aac0acba21b6d91aff9af1d3663ce1598176dea391b04dbfcb16a4f2e6"
+    },
+    "logical": {
+      "blank_lines": 0,
+      "bytes": 1039681,
+      "duplicate_object_keys": [],
+      "field_types": {
+        "answer": {
+          "dict": 518
+        },
+        "id": {
+          "str": 518
+        },
+        "question": {
+          "str": 518
+        }
+      },
+      "fields": {
+        "answer": 518,
+        "id": 518,
+        "question": 518
+      },
+      "filename": "annotation.jsonl",
+      "physical_lines": 518,
+      "records": 518,
+      "sha256": "3ab18c248076f2df7ed4f82b3f8e4dc670b6973a1ce5d65caf3930aed9b7c4e4"
+    }
+  },
+  "method_version": 1,
+  "subdomain_pair_count": 57
+}

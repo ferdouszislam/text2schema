@@ -1,0 +1,714 @@
+[
+  {
+    "dataset": "logical",
+    "line": 1,
+    "record": {
+      "answer": {
+        "Airplane": {
+          "Attributes": [
+            "Airplane Number",
+            "Model",
+            "Passenger Capacity"
+          ],
+          "Foreign key": {},
+          "Primary key": [
+            "Airplane Number"
+          ]
+        },
+        "Crew": {
+          "Attributes": [
+            "Personnel ID",
+            "Name",
+            "Phone Number"
+          ],
+          "Foreign key": {},
+          "Primary key": [
+            "Personnel ID"
+          ]
+        },
+        "Flight": {
+          "Attributes": [
+            "Flight Number",
+            "Departure Time",
+            "Arrival Time",
+            "Origin",
+            "Destination",
+            "Airplane Number",
+            "Captain ID",
+            "First Officer ID",
+            "Start Time",
+            "End Time"
+          ],
+          "Foreign key": {
+            "Airplane Number": {
+              "Airplane": "Airplane Number"
+            },
+            "Captain ID": {
+              "Crew": "Personnel ID"
+            },
+            "First Officer ID": {
+              "Crew": "Personnel ID"
+            }
+          },
+          "Primary key": [
+            "Flight Number"
+          ]
+        }
+      },
+      "id": "67552f0a13602ec03b41a78b",
+      "question": "The airline company operates as follows:\nThe company owns multiple airplanes, each with an Airplane Number, Model, and Passenger Capacity.\nEach airplane can perform multiple flights. Flight information includes Flight Number, Departure Time, Arrival Time, Origin, Destination, Airplane Number, Captain ID, First Officer ID, Start Time, and End Time.\nEach flight is operated by a captain and a first officer, each having their own ID, Name, and Phone Number."
+    }
+  },
+  {
+    "dataset": "logical",
+    "line": 154,
+    "record": {
+      "answer": {
+        "Product": {
+          "Attributes": [
+            "Title",
+            "Category",
+            "Price",
+            "Images",
+            "Content",
+            "Validity Period",
+            "Contact Person",
+            "Phone Number",
+            "Product ID"
+          ],
+          "Foreign key": {},
+          "Primary key": [
+            "Product ID"
+          ]
+        },
+        "Supply and Demand Relationship": {
+          "Attributes": [
+            "User ID",
+            "Product ID",
+            "Supply and Demand ID",
+            "Supply and Demand Type"
+          ],
+          "Foreign key": {
+            "Product ID": {
+              "User ID": {
+                "schema_0": "User ID"
+              }
+            },
+            "User ID": {
+              "Product ID": {
+                "schema_1": "Product ID"
+              }
+            }
+          },
+          "Primary key": [
+            "Supply and Demand ID"
+          ]
+        },
+        "User": {
+          "Attributes": [
+            "Username",
+            "Password",
+            "Gender",
+            "Phone Number",
+            "ID Number",
+            "Email",
+            "User ID"
+          ],
+          "Foreign key": {},
+          "Primary key": [
+            "User ID"
+          ]
+        }
+      },
+      "id": "67552f0a13602ec03b41a9e7",
+      "question": "A commodity supply and demand system is designed to facilitate user registration and login, personal information management, product posting and management, search and browsing, as well as the display of supply and demand information matching. The functional requirements are as follows:\n\nThe user table management stores relevant user information, including user ID, as well as username, password, gender, phone number, ID number, and email, which are used for user registration, login, and personal information management.\n\nThe product table management stores various types of product information, including title, category, price, images, content, validity period, contact person, and phone number, supporting the functions of product posting and management.\n\nThe supply and demand relationship table management uses the supply and demand ID as an identifier, combines user ID and product ID, and specifies the type of supply and demand to record the relationship between users and products, thereby achieving the function of matching and displaying supply and demand information."
+    }
+  },
+  {
+    "dataset": "logical",
+    "line": 319,
+    "record": {
+      "answer": {
+        "Region": {
+          "Attributes": [
+            "Regional Code",
+            "City Code",
+            "Center Coordinates",
+            "Regional Level",
+            "Merged Name",
+            "Regional Name",
+            "Parent Regional ID",
+            "Pinyin",
+            "Abbreviation",
+            "Postal Code"
+          ],
+          "Foreign key": {
+            "Parent Regional ID": {
+              "Region": "Regional Code"
+            }
+          },
+          "Primary key": [
+            "Regional Code"
+          ]
+        }
+      },
+      "id": "67552f0a13602ec03b41a8b8",
+      "question": "Regional Management System Description:\n\nThe Regional Management System is designed to manage regional information nationwide. The system encompasses multiple regions, each distinctively identified by a set of Attributes including unique Regional Code, City Code, Center Coordinates, Regional Level, Merged Name, Regional Name, Parent Regional ID, Pinyin, Abbreviation, and Postal Code.  A hierarchical structure among regions is established through Parent Regional ID, supporting the management of multi-level regional structures."
+    }
+  },
+  {
+    "dataset": "logical",
+    "line": 406,
+    "record": {
+      "answer": {
+        "Accounts Payable": {
+          "Attributes": [
+            "Accounts Payable ID",
+            "Supplier ID",
+            "Amount",
+            "Due Date"
+          ],
+          "Foreign key": {},
+          "Primary key": [
+            "Accounts Payable ID"
+          ]
+        },
+        "Accounts Receivable": {
+          "Attributes": [
+            "Accounts Receivable ID",
+            "Customer ID",
+            "Amount",
+            "Due Date"
+          ],
+          "Foreign key": {},
+          "Primary key": [
+            "Accounts Receivable ID"
+          ]
+        },
+        "Cost Accounting": {
+          "Attributes": [
+            "Cost Accounting ID",
+            "Cost Center",
+            "Amount",
+            "Date"
+          ],
+          "Foreign key": {},
+          "Primary key": [
+            "Cost Accounting ID"
+          ]
+        },
+        "Customer Information": {
+          "Attributes": [
+            "Customer ID",
+            "Customer Name",
+            "Contact Information",
+            "Address"
+          ],
+          "Foreign key": {},
+          "Primary key": [
+            "Customer ID"
+          ]
+        },
+        "Employee Information": {
+          "Attributes": [
+            "Employee ID",
+            "Name",
+            "Position",
+            "Hire Date",
+            "Salary"
+          ],
+          "Foreign key": {},
+          "Primary key": [
+            "Employee ID"
+          ]
+        },
+        "General Ledger": {
+          "Attributes": [
+            "General Ledger ID",
+            "Account Name",
+            "Amount",
+            "Date"
+          ],
+          "Foreign key": {},
+          "Primary key": [
+            "General Ledger ID"
+          ]
+        },
+        "Material": {
+          "Attributes": [
+            "Material ID",
+            "Material Name",
+            "Material Description",
+            "Material Type"
+          ],
+          "Foreign key": {},
+          "Primary key": [
+            "Material ID"
+          ]
+        },
+        "Material Inventory": {
+          "Attributes": [
+            "Material ID",
+            "Warehouse ID",
+            "Quantity"
+          ],
+          "Foreign key": {
+            "Inventory ID": {
+              "Warehouse Information": "Warehouse ID"
+            },
+            "Material ID": {
+              "Material": "Material ID"
+            }
+          },
+          "Primary key": [
+            "Material ID",
+            "Inventory ID"
+          ]
+        },
+        "Material Requirement Plan": {
+          "Attributes": [
+            "Plan ID",
+            "Material ID",
+            "Required Quantity",
+            "Date"
+          ],
+          "Foreign key": {
+            "Material ID": {
+              "Warehouse Information": "Material ID"
+            }
+          },
+          "Primary key": [
+            "Plan ID"
+          ]
+        },
+        "Performance": {
+          "Attributes": [
+            "Employee ID",
+            "Evaluation Date",
+            "Performance Score"
+          ],
+          "Foreign key": {
+            "Employee ID": {
+              "Employee Information": "Employee ID"
+            }
+          },
+          "Primary key": [
+            "Employee ID",
+            "Evaluation Date"
+          ]
+        },
+        "Production Plan": {
+          "Attributes": [
+            "Plan ID",
+            "Product Name",
+            "Production Quantity",
+            "Start Date",
+            "End Date"
+          ],
+          "Foreign key": {},
+          "Primary key": [
+            "Plan ID"
+          ]
+        },
+        "Production Scheduling": {
+          "Attributes": [
+            "Scheduling ID",
+            "Production Plan ID",
+            "Production Date",
+            "Scheduling Status"
+          ],
+          "Foreign key": {
+            "Production Plan ID": {
+              "Production Plan": "Plan ID"
+            }
+          },
+          "Primary key": [
+            "Scheduling ID"
+          ]
+        },
+        "Project Plan": {
+          "Attributes": [
+            "Project ID",
+            "Project Name",
+            "Planned Start Date",
+            "Planned End Date",
+            "Execution Status",
+            "Project Progress"
+          ],
+          "Foreign key": {},
+          "Primary key": [
+            "Project ID"
+          ]
+        },
+        "Purchase Order": {
+          "Attributes": [
+            "Order ID",
+            "Supplier ID",
+            "Order Date",
+            "Total Amount"
+          ],
+          "Foreign key": {
+            "Supplier ID": {
+              "Material": "Supplier ID"
+            }
+          },
+          "Primary key": [
+            "Order ID"
+          ]
+        },
+        "Sales Order": {
+          "Attributes": [
+            "Order ID",
+            "Customer ID",
+            "Order Date",
+            "Total Amount"
+          ],
+          "Foreign key": {
+            "Customer ID": {
+              "Purchase Order": "Customer ID"
+            }
+          },
+          "Primary key": [
+            "Order ID"
+          ]
+        },
+        "Supplier Information": {
+          "Attributes": [
+            "Supplier ID",
+            "Supplier Name",
+            "Contact Information",
+            "Address"
+          ],
+          "Foreign key": {},
+          "Primary key": [
+            "Supplier ID"
+          ]
+        },
+        "Supplier Material Supply": {
+          "Attributes": [
+            "Supplier ID",
+            "Material ID"
+          ],
+          "Foreign key": {
+            "Material ID": {
+              "Material": "Material ID"
+            },
+            "Supplier ID": {
+              "Supplier Information": "Supplier ID"
+            }
+          },
+          "Primary key": [
+            "Supplier ID",
+            "Material ID"
+          ]
+        },
+        "Warehouse Information": {
+          "Attributes": [
+            "Warehouse ID",
+            "Warehouse Name",
+            "Warehouse Address"
+          ],
+          "Foreign key": {},
+          "Primary key": [
+            "Warehouse ID"
+          ]
+        }
+      },
+      "id": "67552f0a13602ec03b41a9cb",
+      "question": "The following is a database requirement description for an enterprise resource planning (ERP) system:\n\nThe ERP system covers multiple modules, including financial management, human resource management, production management, sales management, procurement management, inventory management, and project management. Each module has related entities, and these entities are associated through relationships to ensure data consistency and collaboration.\n\nIn the financial management module, the system records accounting information of various company accounts through the general ledger, including Attributes such as general ledger ID, account name, amount, and date. At the same time, accounts receivable records customer receivable information, such as accounts receivable ID, customer ID, amount, and due date. Accounts payable records the amounts the company owes to suppliers, including accounts payable ID, supplier ID, amount, and due date. Cost accounting records expense information of cost centers, including cost accounting ID, cost center, amount, and date.\n\nIn the human resource management module, the employee information table manages basic information of all employees, such as employee ID, name, position, hire date, and salary. Meanwhile, the performance table records employee performance evaluation information, generating performance scores based on employee ID and evaluation date.\n\nThe production management module includes production planning, material requirements planning, and production scheduling. The production plan records detailed information of each production plan, such as plan ID, product name, production quantity, start and end dates. The material requirements plan records the required quantity and date of materials based on production plan requirements. The production scheduling table is used to manage scheduling information during the production process, including scheduling ID, production plan ID, production date, and scheduling status.\n\nIn the sales management module, the sales order table records customer order information, including order ID, customer ID, order date, and total amount. At the same time, customer information records basic customer data, such as customer ID, name, contact information, and address.\n\nIn the procurement management module, the purchase order records supplier order information, including order ID, supplier ID, order date, and total amount. Supplier information manages basic supplier information, such as supplier ID, name, contact information, and address.\n\nThe inventory management module contains material and warehouse information. The material table records basic information of all materials, such as material ID, name, description, and type. Warehouse information manages information of each warehouse, including warehouse ID, warehouse name, and address.\n\nIn the project management module, the project plan table records detailed project information, including project ID, name, planned start and end dates, execution status, and project progress.\n\nAdditionally, the system ensures association and collaboration between modules through relationship tables. For example, the supplier material supply relationship table ensures the many-to-many relationship between suppliers and materials, while the material inventory table records inventory information between materials and warehouses.\n\nThrough these detailed entity and relationship designs, the system ensures data accuracy and effectiveness of each module, supporting efficient operation of various enterprise management functions.\n"
+    }
+  },
+  {
+    "dataset": "logical",
+    "line": 487,
+    "record": {
+      "answer": {
+        "CODELIST": {
+          "Attributes": [
+            "CODEWORK",
+            "CODE"
+          ],
+          "Foreign key": {},
+          "Primary key": [
+            "CODEWORK",
+            "CODE"
+          ]
+        },
+        "CODELIST_RELATION": {
+          "Attributes": [
+            "ID",
+            "CODEWORK1",
+            "CODE1",
+            "CODEWORK2",
+            "CODE2",
+            "VALID_FROM",
+            "VALID_TO",
+            "CREATED_BY",
+            "CREATED_TIME",
+            "UPDATED_BY",
+            "UPDATED_TIME"
+          ],
+          "Foreign key": {
+            "CODEWORK1, CODE1": {
+              "CODELIST": [
+                "CODEWORK",
+                "CODE"
+              ]
+            },
+            "CODEWORK2, CODE2": {
+              "CODELIST": [
+                "CODEWORK",
+                "CODE"
+              ]
+            }
+          },
+          "Primary key": [
+            "ID"
+          ]
+        }
+      },
+      "id": "67552f0a13602ec03b41a8ab",
+      "question": "The database is a system for managing code lists and their relationships, such as data standardization and mapping systems in the fields of finance, medical care or administrative management.\n\nMain functions\n\n1. Code relationship management: The system can store and manage the relationship between different code systems to ensure the standardization and consistency of the code.\n2. Time validity control: Each code relationship record has an effective start date and end date, and the system can ensure the validity of the code relationship within a specific time period.\n3. Audit tracking: Record the creator, creation time, modifier, and modification time of each record to facilitate auditing and tracking the change history of data.\n4. Uniqueness constraint: Ensure that each code relationship is unique in a specific code system combination to prevent duplicate data.\n5. Foreign key association: Associate to the KODELISTE table through a Foreign key to ensure the referential integrity of the code relationship."
+    }
+  },
+  {
+    "dataset": "ddl",
+    "line": 1,
+    "record": {
+      "answer": "CREATE TABLE Airplane (\n    Airplane_Number INTEGER PRIMARY KEY,\n    Model VARCHAR(255),\n    Passenger_Capacity INTEGER\n);\n\nCREATE TABLE Crew (\n    Name VARCHAR(255),\n    Personnel_ID INTEGER PRIMARY KEY,\n    Phone_Number VARCHAR(255)\n);\n\nCREATE TABLE Flight (\n    Airplane_Number INTEGER NOT NULL,\n    Arrival_Time DATETIME,\n    Captain_ID INTEGER NOT NULL,\n    Departure_Time DATETIME,\n    Destination VARCHAR(255),\n    End_Time DATETIME,\n    First_Officer_ID INTEGER NOT NULL,\n    Flight_Number INTEGER PRIMARY KEY,\n    Origin VARCHAR(255),\n    Start_Time DATETIME,\n    FOREIGN KEY (Airplane_Number) REFERENCES Airplane(Airplane_Number),\n    FOREIGN KEY (Captain_ID) REFERENCES Crew(Personnel_ID),\n    FOREIGN KEY (First_Officer_ID) REFERENCES Crew(Personnel_ID)\n);",
+      "assign_to": "dyq",
+      "assign_to_round2": "gcc",
+      "domain": [
+        "交通运输、仓储和邮政业",
+        "航空运输业"
+      ],
+      "id": "67552f0a13602ec03b41a78b",
+      "question": "The airline company operates as follows:\nThe company owns multiple airplanes, each with an Airplane Number, Model, and Passenger Capacity.\nEach airplane can perform multiple flights. Flight information includes Flight Number, Departure Time, Arrival Time, Origin, Destination, Airplane Number, Captain ID, First Officer ID, Start Time, and End Time.\nEach flight is operated by a captain and a first officer, each having their own ID, Name, and Phone Number.",
+      "remarks": "外键的模式名由中文改成schema_0"
+    }
+  },
+  {
+    "dataset": "ddl",
+    "line": 5,
+    "record": {
+      "answer": "CREATE TABLE Farm (\n    Address VARCHAR(255),\n    Contact_Information VARCHAR(255),\n    Farm_ID INTEGER PRIMARY KEY,\n    Name VARCHAR(255)\n);\n\nCREATE TABLE Operator (\n    Name VARCHAR(255),\n    Operator_ID INTEGER PRIMARY KEY,\n    Phone VARCHAR(255)\n);\n\nCREATE TABLE Equipment (\n    Equipment_ID INTEGER PRIMARY KEY,\n    Farm_ID INTEGER NOT NULL,\n    Model VARCHAR(255),\n    Name VARCHAR(255),\n    Purchase_Date DATETIME,\n    Usage_Status BOOL,\n    FOREIGN KEY (Farm_ID) REFERENCES Farm(Farm_ID)\n);\n\nCREATE TABLE Maintenance_Record (\n    Equipment_ID INTEGER NOT NULL,\n    Maintenance_Date DATETIME,\n    Maintenance_Result VARCHAR(255),\n    Maintenance_Type VARCHAR(255),\n    Operator_ID INTEGER NOT NULL,\n    PRIMARY KEY (Device_ID, Operator_ID, Maintenance_Date),\n    FOREIGN KEY (Equipment_ID) REFERENCES Equipment(Equipment_ID),\n    FOREIGN KEY (Operator_ID) REFERENCES Operator(Operator_ID)\n);",
+      "assign_to": "tk",
+      "assign_to_round2": "szc",
+      "domain": [
+        "农、林、牧、渔业",
+        "农业"
+      ],
+      "id": "67552f0a13602ec03b41a7aa",
+      "question": "The agricultural machinery and equipment management system needs to manage the machinery and equipment of multiple farms. Each equipment has equipment ID, name, model, purchase date, usage status (such as \"normal\", \"maintenance\", \"disabled\", etc.), maintenance record and operator. Each farm has farm ID, name, address and contact information. Each maintenance record includes equipment ID, maintenance date, maintenance type (such as \"routine inspection\", \"fault repair\", etc.), operator and maintenance result (such as \"completed\", \"uncompleted\", etc.). It is necessary to record the basic information of the operator (operator ID, name, phone number) to facilitate the tracing of operation records.",
+      "remarks": "修改了业务需求描述的markdown格式，需求增加操作员的信息。将维护记录设置为关系而不是实体。"
+    }
+  },
+  {
+    "dataset": "ddl",
+    "line": 57,
+    "record": {
+      "answer": "CREATE TABLE User (\n    Avatar VARCHAR(255),\n    Email VARCHAR(255),\n    Password VARCHAR(255),\n    Profile VARCHAR(255),\n    User_ID INTEGER PRIMARY KEY,\n    Username VARCHAR(255)\n);\n\nCREATE TABLE Recipe (\n    Bitter_Level INTEGER,\n    Calories FLOAT,\n    Creator_ID INTEGER NOT NULL,\n    Ingredients VARCHAR(255),\n    Large_Image_Filename VARCHAR(255),\n    Meaty_Level INTEGER,\n    Number_of_Ratings FLOAT,\n    Portion INTEGER,\n    Rating FLOAT,\n    Recipe_ID INTEGER PRIMARY KEY,\n    Recipe_Name VARCHAR(255),\n    Salty_Level INTEGER,\n    Small_Image_Filename VARCHAR(255),\n    Sour_Level INTEGER,\n    Spicy_Level INTEGER,\n    Steps VARCHAR(255),\n    Sweet_Level INTEGER,\n    Total_Time FLOAT,\n    FOREIGN KEY (Creator_ID) REFERENCES User(User_ID)\n);\n\nCREATE TABLE Blog (\n    Author_User_ID INTEGER NOT NULL,\n    Blog_ID INTEGER PRIMARY KEY,\n    Blog_Summary VARCHAR(255),\n    Blog_Title VARCHAR(255),\n    Publication_Time DATETIME,\n    FOREIGN KEY (Author_User_ID) REFERENCES User(User_ID)\n);\n\nCREATE TABLE Collected_Recipe (\n    Collection_Time DATETIME,\n    Recipe_ID INTEGER NOT NULL,\n    User_ID INTEGER NOT NULL,\n    PRIMARY KEY (User_ID, Recipe_ID),\n    FOREIGN KEY (Recipe_ID) REFERENCES Recipe(Recipe_ID),\n    FOREIGN KEY (User_ID) REFERENCES User(User_ID)\n);",
+      "assign_to": "szc",
+      "assign_to_round2": "wq",
+      "domain": [
+        "信息传输、软件和信息技术服务业",
+        "互联网和相关服务"
+      ],
+      "id": "67552f0a13602ec03b41a870",
+      "question": "The system primarily involves three entities: User (User ID, Username, Email, Password, Profile, Avatar), Recipe (Recipe ID, Recipe Name, Ingredients, Steps, Total Time, Portion, Spicy Level, Bitter Level, Sweet Level, Meaty Level, Salty Level, Sour Level, Rating, Number of Ratings, Large Image Filename, Calories, Creator ID, Small Image Filename), and Blog (Blog ID, Author User ID, Blog Title, Publication Time, Blog Summary). System functionalities include user registration, login, personal information management, recipe publishing, collecting, rating, as well as blog publishing and viewing. Additionally, users can create recipes, collect recipes, and publish blogs, with each recipe and blog being managed by users. The system manages relationships between users and recipes or blogs through creation, collection of recipes, and blog publishing.\n",
+      "remarks": "WQ:无修改"
+    }
+  },
+  {
+    "dataset": "ddl",
+    "line": 58,
+    "record": {
+      "answer": "CREATE TABLE Material (\n    Description VARCHAR(255),\n    Material_ID INTEGER PRIMARY KEY,\n    Name VARCHAR(255),\n    Type VARCHAR(255),\n    Unit VARCHAR(255)\n);\n\nCREATE TABLE Region (\n    Region_ID INTEGER PRIMARY KEY,\n    Region_Name VARCHAR(255)\n);\n\nCREATE TABLE Country (\n    Country_Code VARCHAR(255),\n    Country_ID INTEGER PRIMARY KEY,\n    Country_Name VARCHAR(255)\n);\n\nCREATE TABLE Procurement_Application (\n    Application_Quantity INTEGER,\n    Application_Time DATETIME,\n    Material_ID INTEGER NOT NULL,\n    Procurement_Application_ID INTEGER PRIMARY KEY,\n    Remarks VARCHAR(255),\n    FOREIGN KEY (Material_ID) REFERENCES Material(Material_ID)\n);\n\nCREATE TABLE Supplier (\n    Address VARCHAR(255),\n    Country_ID INTEGER NOT NULL,\n    Fax INTEGER,\n    Name VARCHAR(255),\n    Phone INTEGER,\n    Region_ID INTEGER NOT NULL,\n    Supplier_ID INTEGER PRIMARY KEY,\n    Tax_ID INTEGER,\n    FOREIGN KEY (Country_ID) REFERENCES Country(Country_ID),\n    FOREIGN KEY (Region_ID) REFERENCES Region(Region_ID)\n);\n\nCREATE TABLE Company (\n    Activation_Time DATETIME,\n    Address VARCHAR(255),\n    Company_ID INTEGER PRIMARY KEY,\n    Country_ID INTEGER NOT NULL,\n    Creation_Time DATETIME,\n    ERP_System_Identifier BLOB,\n    Email VARCHAR(255),\n    Name VARCHAR(255),\n    Password VARCHAR(255),\n    Phone INTEGER,\n    Region_ID INTEGER NOT NULL,\n    Security_Answer VARCHAR(255),\n    Security_Question VARCHAR(255),\n    Status VARCHAR(255),\n    Tax_ID INTEGER,\n    Update_Time DATETIME,\n    Username VARCHAR(255),\n    VAT_Registration_Number INTEGER,\n    FOREIGN KEY (Country_ID) REFERENCES Country(Country_ID),\n    FOREIGN KEY (Region_ID) REFERENCES Region(Region_ID)\n);\n\nCREATE TABLE Supplier_Production_Material (\n    Material_ID INTEGER NOT NULL,\n    Production_Quantity INTEGER,\n    Production_Time DATETIME,\n    Remarks VARCHAR(255),\n    Supplier_ID INTEGER NOT NULL,\n    PRIMARY KEY (Material_ID, Supplier_ID, Production_Time),\n    FOREIGN KEY (Material_ID) REFERENCES Material(Material_ID),\n    FOREIGN KEY (Supplier_ID) REFERENCES Supplier(Supplier_ID)\n);",
+      "assign_to": "gcc",
+      "assign_to_round2": "cs",
+      "domain": [
+        "批发和零售业",
+        "批发业"
+      ],
+      "id": "67552f0a13602ec03b41a878",
+      "question": "Supply Chain Management System\nThe main function of the supply chain management system is to manage procurement, material supply, and production processes between suppliers and companies. The system supports the input of supplier and company information, material management, procurement application handling, and records detailed data for each material production. The specific business description is as follows:\n\nSupplier Management:\nThe system can manage the basic information of multiple suppliers, including supplier name, address, phone number, fax number, tax ID, etc. Each supplier is categorized based on the region and country they are located in, ensuring that the supplier’s geographical and business background is clearly identified.\nThe system also records information about the materials produced by suppliers, including material type, production time, production quantity, etc., helping the company understand the production capacity and material supply situation of each supplier.\n\nCompany Management:\nThe system supports recording company information, including company name, address, phone number, email, tax ID, ERP system identifier, etc. The management of company information ensures that procurement and supply chain operations are carried out according to company standards and supports management of companies in different regions and countries.\nThe company can also manage procurement applications through the system, ensuring that the types, quantities, and delivery times of requested materials meet the company’s production planning needs.\n\nMaterial Management:\nThe system can manage basic information about all materials, including material type, name, description, unit, etc. The management of material information helps the company clearly understand the specifications, usage, and inventory levels of each material.\nThe relationships between materials and suppliers will also be established in the system to track materials produced by different suppliers and their production quantities.\n\nProcurement Application Management:\nThe system can record internal procurement applications within the company, including material ID, application time, application quantity, remarks, etc., ensuring the rationality of each material request and enabling effective tracking of the procurement process.\nThe procurement application form is linked with material information, allowing timely adjustments in procurement when demand increases or production plans change, ensuring that production does not halt due to material shortages.\n\nRegion and Country Management:\nThe system supports management of different regions and countries, including region names and country codes and names. Through this information, the system can manage the distribution of suppliers, companies, and materials based on geographical location, improving the optimization ability of the supply chain.\nIn summary, this supply chain management system helps the company manage the entire procurement and material supply process by recording data on suppliers, materials, procurement applications, and more, optimizing supply chain operations and ensuring that each material procurement and production process is efficient and traceable.",
+      "remarks": "CS 2025/1/22 round2 edit"
+    }
+  },
+  {
+    "dataset": "ddl",
+    "line": 59,
+    "record": {
+      "answer": "CREATE TABLE User (\n    Areas_of_Interest VARCHAR(255),\n    Date_of_Birth DATETIME,\n    Email VARCHAR(255),\n    Gender BOOL,\n    Number_of_Followers INTEGER,\n    Password VARCHAR(255),\n    User_Account VARCHAR(255),\n    User_Creation_Time DATETIME,\n    User_Description VARCHAR(255),\n    User_ID INTEGER PRIMARY KEY,\n    User_Name VARCHAR(255)\n);\n\nCREATE TABLE Podcast (\n    Cover_Image_Path VARCHAR(255),\n    Creation_Time DATETIME,\n    Last_Update_Time DATETIME,\n    Number_of_Favorites INTEGER,\n    Number_of_Likes INTEGER,\n    Number_of_Visits INTEGER,\n    Podcast_File_Path VARCHAR(255),\n    Podcast_ID INTEGER PRIMARY KEY,\n    Podcast_Name VARCHAR(255),\n    Publisher_ID INTEGER NOT NULL,\n    Type VARCHAR(255),\n    FOREIGN KEY (Publisher_ID) REFERENCES User(User_ID)\n);\n\nCREATE TABLE Playlist (\n    Creation_Time DATETIME,\n    Last_Update_Time DATETIME,\n    Number_of_Favorites INTEGER,\n    Number_of_Likes INTEGER,\n    Number_of_Visits INTEGER,\n    Playlist_ID INTEGER PRIMARY KEY,\n    Playlist_Name VARCHAR(255),\n    Playlist_Path VARCHAR(255),\n    User_ID_who_created_the_playlist INTEGER NOT NULL,\n    FOREIGN KEY (User_ID_who_created_the_playlist) REFERENCES User(User_ID)\n);\n\nCREATE TABLE User_Publishes_Podcast (\n    Podcast_ID INTEGER NOT NULL,\n    User_ID INTEGER NOT NULL,\n    PRIMARY KEY (User_ID, Podcast_ID),\n    FOREIGN KEY (Podcast_ID) REFERENCES Podcast(Podcast_ID),\n    FOREIGN KEY (User_ID) REFERENCES User(User_ID)\n);\n\nCREATE TABLE User_Creates_Playlist (\n    Playlist_ID INTEGER NOT NULL,\n    User_ID INTEGER NOT NULL,\n    PRIMARY KEY (User_ID, Playlist_ID),\n    FOREIGN KEY (Playlist_ID) REFERENCES Playlist(Playlist_ID),\n    FOREIGN KEY (User_ID) REFERENCES User(User_ID)\n);\n\nCREATE TABLE Playlist_Contains_Podcasts (\n    Playlist_ID INTEGER NOT NULL,\n    Podcast_ID INTEGER NOT NULL,\n    PRIMARY KEY (Podcast_ID, Playlist_ID),\n    FOREIGN KEY (Playlist_ID) REFERENCES Playlist(Playlist_ID),\n    FOREIGN KEY (Podcast_ID) REFERENCES Podcast(Podcast_ID)\n);",
+      "assign_to": "cs",
+      "assign_to_round2": "hzb",
+      "domain": [
+        "文化、体育和娱乐业",
+        "娱乐业"
+      ],
+      "id": "67552f0a13602ec03b41a879",
+      "question": "DevFlix is ​​an innovative audio content sharing platform that aims to provide users with a comprehensive service that integrates podcast publishing, playlist management and audio collection. User information includes username, user account, email, password, user description, gender, interest area, number of followers, number of people following, and user creation time. Podcast information includes publisher, podcast file path, type, podcast name, cover image path, number of visits, number of likes, creation time, number of favorites, and last update time. Playlist information includes the user who created the playlist, the user who created the playlist, playlist name, number of visits, number of likes, creation time, number of favorites, creation time, and last update time. DevFlix allows users to register accounts, publish and manage their own podcasts, interact with other users and create playlists. The platform also provides a collection function, allowing users to save content of interest and access it at any time. In addition, DevFlix also has detailed statistics and analysis functions to track the visit data and user interaction of each podcast and playlist.\n",
+      "remarks": "大篇幅补充需求描述，新增schema_5,其他schema也有一些属性调整"
+    }
+  },
+  {
+    "dataset": "ddl",
+    "line": 80,
+    "record": {
+      "answer": "CREATE TABLE Employee (\n    Base_salary FLOAT,\n    Commission_rate FLOAT,\n    Email VARCHAR(255),\n    Employee_ID INTEGER PRIMARY KEY,\n    Employee_number VARCHAR(255),\n    Hire_date DATETIME,\n    Name VARCHAR(255),\n    Office_phone VARCHAR(255),\n    Position VARCHAR(255),\n    Supervisor_ID INTEGER NOT NULL,\n    FOREIGN KEY (Supervisor_ID) REFERENCES Employee(Employee_ID)\n);\n\nCREATE TABLE Product (\n    Brand VARCHAR(255),\n    Cost_price FLOAT,\n    Description VARCHAR(255),\n    Inventory_quantity INTEGER,\n    Model VARCHAR(255),\n    Name VARCHAR(255),\n    Product_ID INTEGER PRIMARY KEY,\n    Specification VARCHAR(255),\n    Suggested_retail_price FLOAT,\n    Supplier VARCHAR(255)\n);\n\nCREATE TABLE Order (\n    Actual_shipping_date DATETIME,\n    Notes VARCHAR(255),\n    Order_ID INTEGER PRIMARY KEY,\n    Order_date DATETIME,\n    Order_status VARCHAR(255),\n    Required_delivery_date DATETIME,\n    Special_instructions VARCHAR(255)\n);\n\nCREATE TABLE Office_location (\n    City VARCHAR(255),\n    Contact_phone VARCHAR(255),\n    Country VARCHAR(255),\n    Fax VARCHAR(255),\n    Manager_employee_ID INTEGER NOT NULL,\n    Office_location_ID INTEGER PRIMARY KEY,\n    Postal_code VARCHAR(255),\n    Street_address VARCHAR(255),\n    FOREIGN KEY (Manager_employee_ID) REFERENCES Employee(Employee_ID)\n);\n\nCREATE TABLE Customer (\n    City VARCHAR(255),\n    Contact_person_name VARCHAR(255),\n    Contact_person_phone VARCHAR(255),\n    Contact_person_position VARCHAR(255),\n    Country VARCHAR(255),\n    Credit_limit FLOAT,\n    Customer_ID INTEGER PRIMARY KEY,\n    Customer_company_name VARCHAR(255),\n    Dedicated_sales_rep_employee_ID INTEGER NOT NULL,\n    Postal_code VARCHAR(255),\n    State/Province VARCHAR(255),\n    Street VARCHAR(255),\n    FOREIGN KEY (Dedicated_sales_rep_employee_ID) REFERENCES Employee(Employee_ID)\n);\n\nCREATE TABLE Sales_performance_record (\n    Record_ID INTEGER PRIMARY KEY,\n    Sales_person_ID INTEGER NOT NULL,\n    Total_sales FLOAT,\n    Year INTEGER,\n    FOREIGN KEY (Sales_person_ID) REFERENCES Employee(Employee_ID)\n);\n\nCREATE TABLE Order_detail (\n    Line_number VARCHAR(255),\n    Order_ID INTEGER NOT NULL,\n    Product_ID INTEGER NOT NULL,\n    Quantity INTEGER,\n    Unit_price FLOAT,\n    PRIMARY KEY (Order_ID, Product_ID),\n    FOREIGN KEY (Order_ID) REFERENCES Order(Order_ID),\n    FOREIGN KEY (Product_ID) REFERENCES Product(Product_ID)\n);\n\nCREATE TABLE Payment_record (\n    Check_clearing_date DATETIME,\n    Check_number VARCHAR(255),\n    Customer_accounts_receivable FLOAT,\n    Invoice_amount FLOAT,\n    Paying_customer_ID INTEGER NOT NULL,\n    Payment_date DATETIME,\n    Record_ID INTEGER PRIMARY KEY,\n    FOREIGN KEY (Paying_customer_ID) REFERENCES Customer(Customer_ID)\n);",
+      "assign_to": "hzb",
+      "assign_to_round2": "gcc",
+      "domain": [
+        "批发和零售业",
+        "零售业"
+      ],
+      "id": "67552f0a13602ec03b41a8f3",
+      "question": "This is a Sales Management System for managing company sales, orders, customers, employees, and products. For office location management, the system manages company office locations including city, street address, postal code, country, records office contact numbers and fax numbers, and assigns dedicated managers for each location. For employee management, the system records employee basic information including name, position, hire date, employee number, maintains employee office phone and email contacts, sets up direct supervisors to establish clear reporting relationships, records employee base salary and commission rates, and tracks sales performance and revenue for each fiscal year. For customer management, the system records customer company names, customer IDs, maintains detailed contact person information including name, position, phone, records detailed addresses including street, city, state/province, postal code, country, assigns dedicated sales representatives for each customer, sets and manages customer credit limits, and records payment details including check numbers, payment dates, and amounts. For product management, the system records product names, models, specifications, descriptions, sets product cost prices and suggested retail prices, tracks inventory quantities, and records product suppliers and brands. For order management, the system records order dates, requested delivery dates, actual shipping dates and ordering customers, tracks order status (such as pending, shipped, completed), records special instructions and notes, and details product quantities, unit prices, and line numbers in each order. For sales performance management, the system records each salesperson's total sales by fiscal year, analyzes sales trends and performance changes, evaluates sales strategy effectiveness, and provides data support for setting sales targets. For payment management, the system records check numbers, payment dates, invoice amounts and paying customers for each payment, registers check clearing dates, and tracks customer accounts receivable.",
+      "remarks": "实体中需要包含schema中外键的属性"
+    }
+  },
+  {
+    "dataset": "ddl",
+    "line": 81,
+    "record": {
+      "answer": "CREATE TABLE Benchmark_Testing (\n    Benchmark_Testing_ID INTEGER PRIMARY KEY,\n    Benchmark_Testing_Name VARCHAR(255)\n);\n\nCREATE TABLE Unit (\n    Benchmark_Testing_ID INTEGER NOT NULL,\n    Unit_ID INTEGER PRIMARY KEY,\n    Unit_Name VARCHAR(255),\n    FOREIGN KEY (Benchmark_Testing_ID) REFERENCES Benchmark_Testing(Benchmark_Testing_ID)\n);",
+      "assign_to": "lzm",
+      "assign_to_round2": "szh",
+      "domain": [
+        "信息传输、软件和信息技术服务业",
+        "软件和信息技术服务业"
+      ],
+      "id": "67552f0a13602ec03b41a908",
+      "question": "The unit management of a benchmark testing system is as follows: The system contains multiple units, with unit information including Unit ID and Unit Name. The Unit ID is the Primary key and auto-incrementing, while the Unit Name is a unique value and cannot be null. Each unit is associated with a benchmark testing type, with the Benchmark Testing Type ID as a Foreign key referencing the Benchmark Testing Type table's Benchmark Testing Type ID field, which also cannot be null. Through these tables, the system effectively manages unit information and its relationship with benchmark testing types, ensuring data consistency and integrity.",
+      "remarks": ""
+    }
+  },
+  {
+    "dataset": "ddl",
+    "line": 82,
+    "record": {
+      "answer": "CREATE TABLE Customers_Table (\n    CustomerID INTEGER PRIMARY KEY,\n    Name VARCHAR(255),\n    Phone INTEGER\n);\n\nCREATE TABLE Airlines_Table (\n    AirlineID INTEGER PRIMARY KEY,\n    AirlineName VARCHAR(255),\n    Route VARCHAR(255),\n    Time DATETIME\n);\n\nCREATE TABLE CustomerReviews_Table (\n    AirlineID INTEGER,\n    CustomerID INTEGER,\n    ReviewContent VARCHAR(255),\n    ReviewGrade FLOAT,\n    ReviewID INTEGER PRIMARY KEY\n);\n\nCREATE TABLE CustomerBankAccounts_Table (\n    AccountID null PRIMARY KEY,\n    AccountNumber null,\n    Balance null,\n    CustomerID null\n);",
+      "assign_to": "cyx",
+      "assign_to_round2": "szh",
+      "domain": [
+        "交通运输、仓储和邮政业",
+        "航空运输业"
+      ],
+      "id": "67552f0a13602ec03b41a90e",
+      "question": "The system requirements analysis for managing customer evaluations and customer bank account information in an airline company is as follows:\nCustomer information management includes basic customer information such as user ID, name, and contact number.\nFlight route management includes flight route ID, name, route, and time.\nCustomer evaluation management needs to record the customer ID, the evaluation content and score of the flight route. The flight route information is associated through AirlineID to ensure that each evaluation corresponds to a specific flight route. The customer information is associated through CustomerID to ensure that each evaluation corresponds to a specific customer.\nCustomer bank account management records the customer's bank account information, including account ID, account number, and balance. The customer information is associated through CustomerID to ensure that each bank account corresponds to a specific customer. At the same time, ensure the uniqueness of the account number to avoid duplication. ",
+      "remarks": ""
+    }
+  },
+  {
+    "dataset": "ddl",
+    "line": 123,
+    "record": {
+      "answer": "CREATE TABLE Flight (\n    Airline VARCHAR(255),\n    Arrival_Time DATETIME,\n    Departure_City VARCHAR(255),\n    Departure_Time DATETIME,\n    Destination VARCHAR(255),\n    Flight_ID INTEGER PRIMARY KEY,\n    Ticket_Price FLOAT\n);\n\nCREATE TABLE Passenger (\n    Passenger_Date_of_Birth DATETIME,\n    Passenger_Gender VARCHAR(255),\n    Passenger_ID INTEGER PRIMARY KEY,\n    Passenger_Name VARCHAR(255),\n    Passenger_Phone VARCHAR(255),\n    VIP_Discount FLOAT\n);\n\nCREATE TABLE Discount_Information (\n    Discount_End_Date DATETIME,\n    Discount_ID INTEGER PRIMARY KEY,\n    Discount_Rate FLOAT,\n    Discount_Start_Date DATETIME,\n    Flight_ID INTEGER NOT NULL,\n    FOREIGN KEY (Flight_ID) REFERENCES Flight(Flight_ID)\n);\n\nCREATE TABLE Ticket_Purchase_Record (\n    Flight_ID INTEGER NOT NULL,\n    Passenger_ID INTEGER NOT NULL,\n    Purchase_Amount FLOAT,\n    Ticket_Order_Number VARCHAR(255),\n    Travel_Date DATETIME,\n    FOREIGN KEY (Flight_ID) REFERENCES Flight(Flight_ID),\n    FOREIGN KEY (Passenger_ID) REFERENCES Passenger(Passenger_ID)\n);",
+      "assign_to": "szh2",
+      "assign_to_round2": "gcc",
+      "domain": [
+        "交通运输、仓储和邮政业",
+        "航空运输业"
+      ],
+      "id": "67552f0b13602ec03b41aabb",
+      "question": "Business Requirements Description for Airline Ticket Reservation System:\nAn airline operates multiple flights, each of which has a Flight ID, Airline, Departure City, Departure Time, Destination, Arrival Time, and Ticket Price. The company records discount information, including Flight ID, Discount Start Date, Discount End Date, and Discount Rate. The company manages multiple passenger records, each of which includes Passenger ID, Passenger Name, Passenger Gender, Passenger Date of Birth, Passenger Phone, and VIP Discount. Each ticket purchase is recorded with a Ticket Order Number, Passenger ID, Flight ID, Travel Date, and Purchase Amount. The purchase amount may be influenced by flight discounts and VIP discounts.",
+      "remarks": "折扣信息属性中有航班ID，并且购票记录应该是关系不是实体，并且主键多余"
+    }
+  },
+  {
+    "dataset": "ddl",
+    "line": 228,
+    "record": {
+      "answer": "CREATE TABLE Task (\n    Class_Name VARCHAR(255),\n    Concurrent_Execution_Flag BOOL,\n    Persistence_Flag BOOL,\n    Task_Description VARCHAR(255),\n    Task_ID INTEGER PRIMARY KEY,\n    Task_Name VARCHAR(255)\n);\n\nCREATE TABLE Trigger_Summary (\n    Trigger_ID INTEGER PRIMARY KEY,\n    Trigger_Name VARCHAR(255)\n);\n\nCREATE TABLE Scheduler (\n    Scheduler_Configuration VARCHAR(255),\n    Scheduler_ID INTEGER PRIMARY KEY,\n    Scheduler_Log VARCHAR(255),\n    Scheduler_Name VARCHAR(255),\n    Scheduler_Status VARCHAR(255)\n);\n\nCREATE TABLE Simple_Trigger (\n    Count_Of_Triggers INTEGER,\n    Repeat_Count INTEGER,\n    Repeat_Interval INTEGER,\n    Trigger_ID INTEGER PRIMARY KEY,\n    Trigger_Name VARCHAR(255),\n    Trigger_Type VARCHAR(255)\n);\n\nCREATE TABLE Cron_Trigger (\n    Cron_Expression VARCHAR(255),\n    Timezone VARCHAR(255),\n    Trigger_ID INTEGER PRIMARY KEY,\n    Trigger_Name VARCHAR(255),\n    Trigger_Type VARCHAR(255)\n);\n\nCREATE TABLE Complex_Trigger (\n    Boolean_Attributes BOOL,\n    Decimal_Attributes FLOAT,\n    Integer_Attributes INTEGER,\n    Long_Integer_Attributes VARCHAR(255),\n    String_Attributes VARCHAR(255),\n    Trigger_ID INTEGER PRIMARY KEY,\n    Trigger_Name VARCHAR(255),\n    Trigger_Type VARCHAR(255)\n);\n\nCREATE TABLE Blob_Trigger (\n    Binary_Attributes BLOB,\n    Trigger_ID INTEGER PRIMARY KEY,\n    Trigger_Name VARCHAR(255),\n    Trigger_Type VARCHAR(255)\n);\n\nCREATE TABLE Lock (\n    Lock_Description VARCHAR(255),\n    Lock_ID INTEGER PRIMARY KEY,\n    Lock_Name VARCHAR(255),\n    Lock_Status VARCHAR(255)\n);\n\nCREATE TABLE Task_Uses_Trigger (\n    Calendar_Name VARCHAR(255),\n    End_Time DATETIME,\n    Fault_Instruction VARCHAR(255),\n    Last_Execution_Time DATETIME,\n    Next_Execution_Time DATETIME,\n    Priority INTEGER,\n    Start_Time DATETIME,\n    Task_ID INTEGER NOT NULL,\n    Trigger_ID INTEGER NOT NULL,\n    Trigger_Status VARCHAR(255),\n    PRIMARY KEY (Task_ID, Trigger_ID),\n    FOREIGN KEY (Task_ID) REFERENCES Task(Task_ID),\n    FOREIGN KEY (Trigger_ID) REFERENCES Trigger_Summary(Trigger_ID)\n);\n\nCREATE TABLE Scheduler_Schedules_Task (\n    Scheduler_ID INTEGER NOT NULL,\n    Task_ID INTEGER NOT NULL,\n    Trigger_ID INTEGER NOT NULL,\n    PRIMARY KEY (Scheduler_ID, Task_ID, Trigger_ID),\n    FOREIGN KEY (Scheduler_ID) REFERENCES Scheduler(Scheduler_ID),\n    FOREIGN KEY (Task_ID) REFERENCES Task(Task_ID),\n    FOREIGN KEY (Trigger_ID) REFERENCES Trigger_Summary(Trigger_ID)\n);\n\nCREATE TABLE Scheduler_Acquires_Lock (\n    Acquisition_Time DATETIME,\n    Lock_ID INTEGER NOT NULL,\n    Release_Time DATETIME,\n    Scheduler_ID INTEGER NOT NULL,\n    PRIMARY KEY (Scheduler_ID, Lock_ID),\n    FOREIGN KEY (Lock_ID) REFERENCES Lock(Lock_ID),\n    FOREIGN KEY (Scheduler_ID) REFERENCES Scheduler(Scheduler_ID)\n);",
+      "assign_to": "szc",
+      "assign_to_round2": "dyq",
+      "domain": [
+        "信息传输、软件和信息技术服务业",
+        "软件和信息技术服务业"
+      ],
+      "id": "67552f0a13602ec03b41a886",
+      "question": "The system is a metadata repository for task scheduling, specifically suited for the Quartz scheduling framework. Quartz is an open-source job scheduling framework widely used in Java applications, responsible for managing and scheduling timed tasks. The system supports task definition, trigger management, Cron scheduling, simple triggers, task instance management, and other functions. \n\nThe core entities in the system include tasks, schedulers, triggers, and locks. The task entity mainly consists of task ID, task name, task description, class name, persistence flag, and concurrent execution flag. The task ID is the unique identifier, and all other properties depend on the task ID. The scheduler entity contains scheduler ID, scheduler name, scheduler status, scheduler configuration, and scheduler logs, with the scheduler ID being the unique identifier, and other Attributes describing the configuration and status of the scheduler. The trigger entity includes trigger ID and trigger name, recording basic information for all triggers in the system. Additionally, triggers are divided into sub-entities by type, such as simple triggers, Cron triggers, complex triggers, and Blob triggers, each type having different Attributes.\n\nSimple triggers include trigger ID, trigger name, trigger type, repeat count, repeat interval, and triggered count; Cron triggers contain trigger ID, trigger name, trigger type, Cron expression, and timezone; complex triggers include trigger ID, trigger name, trigger type, and Attributes like string, integer, long integer, decimal, and boolean; Blob triggers possess trigger ID, trigger name, trigger type, and binary Attributes. The lock entity is used to control concurrency in the task scheduling process, with Attributes including lock ID, lock name, lock status, and lock description.\n\nThe relationships within the system are also crucial. The task-to-trigger relationship table records the association between each task and its triggers, containing task ID, trigger ID, next execution time, last execution time, priority, trigger status, start time, end time, calendar name, and fault instruction. Each task can use multiple triggers, and each trigger may also be associated with multiple tasks. The scheduler-to-task relationship table describes which schedulers schedule which tasks, linking scheduler ID, task ID, and trigger ID. The scheduler-to-lock relationship table records the relationship between schedulers and locks, ensuring lock management in a multi-instance environment, Attributes include scheduler ID, lock ID, acquisition time, and release time. \n\nThese entities and relationships constitute the basic framework of the task scheduling system, ensuring task scheduling, execution, and concurrency control, adapting to complex scheduling requirements and multi-instance environments.\n",
+      "remarks": ""
+    }
+  },
+  {
+    "dataset": "ddl",
+    "line": 252,
+    "record": {
+      "answer": "CREATE TABLE Category (\n    Category_Alias VARCHAR(255),\n    Category_ID INTEGER PRIMARY KEY,\n    Category_Name VARCHAR(255),\n    Cover_Image_Path VARCHAR(255),\n    Creation_Time DATETIME,\n    Update_Time DATETIME\n);\n\nCREATE TABLE User (\n    Creation_Time DATETIME,\n    Email VARCHAR(255),\n    Name VARCHAR(255),\n    Password VARCHAR(255),\n    Update_Time DATETIME,\n    User_ID INTEGER PRIMARY KEY\n);\n\nCREATE TABLE Product (\n    Category_ID INTEGER NOT NULL,\n    Cover_Image_Path VARCHAR(255),\n    Creation_Time DATETIME,\n    Product_Description VARCHAR(255),\n    Product_ID INTEGER PRIMARY KEY,\n    Product_Name VARCHAR(255),\n    Product_Price FLOAT,\n    Product_Status VARCHAR(255),\n    Update_Time DATETIME,\n    FOREIGN KEY (Category_ID) REFERENCES Category(Category_ID)\n);\n\nCREATE TABLE Order (\n    Creation_Time DATETIME,\n    Delivery_Address DATETIME,\n    Order_ID INTEGER PRIMARY KEY,\n    Order_Status VARCHAR(255),\n    Postal_Code VARCHAR(255),\n    Total_Order_Price FLOAT,\n    Update_Time DATETIME,\n    User_ID INTEGER NOT NULL,\n    FOREIGN KEY (User_ID) REFERENCES User(User_ID)\n);\n\nCREATE TABLE Order_Contains_Product (\n    Order_ID INTEGER NOT NULL,\n    Product_ID INTEGER NOT NULL,\n    Product_Quantity INTEGER,\n    PRIMARY KEY (Order_ID, Product_ID),\n    FOREIGN KEY (Order_ID) REFERENCES Order(Order_ID),\n    FOREIGN KEY (Product_ID) REFERENCES Product(Product_ID)\n);",
+      "assign_to": "lzm",
+      "assign_to_round2": "cs",
+      "domain": [
+        "批发和零售业",
+        "互联网零售业"
+      ],
+      "id": "67552f0a13602ec03b41a8f0",
+      "question": "The data management system of an e-commerce platform is as follows: The platform includes multiple product categories, with category information consisting of category ID, category name, category alias, cover image path, creation time, and update time. User information includes user ID, username, email, password, creation time, and update time. Order information is stored in the order table, including order ID, user ID, delivery address, postal code, order status, total order price, creation time, and update time, where the user ID is a Foreign key referencing the user ID field in the user table. The relationship between orders and products is recorded in the order product table, including order product ID, order ID, product ID, and product quantity, where the order ID is a Foreign key referencing the order ID field in the order table, and the product ID is a Foreign key referencing the product ID field in the product table. Product information includes product ID, product name, product description, product price, category ID, product status, cover image path, creation time, and update time.",
+      "remarks": "CS 2025/1/27 round2 edit"
+    }
+  },
+  {
+    "dataset": "ddl",
+    "line": 260,
+    "record": {
+      "answer": "CREATE TABLE User (\n    email VARCHAR(255),\n    user_ID INTEGER PRIMARY KEY,\n    username VARCHAR(255)\n);\n\nCREATE TABLE Application (\n    application_ID INTEGER PRIMARY KEY,\n    code VARCHAR(255),\n    name VARCHAR(255),\n    type VARCHAR(255)\n);\n\nCREATE TABLE Web_Service (\n    application_ID INTEGER NOT NULL,\n    creation_date DATETIME,\n    description VARCHAR(255),\n    name VARCHAR(255),\n    service_ID INTEGER PRIMARY KEY,\n    FOREIGN KEY (application_ID) REFERENCES Application(application_ID)\n);\n\nCREATE TABLE Permissions (\n    application_ID INTEGER NOT NULL,\n    permission_ID INTEGER PRIMARY KEY,\n    role VARCHAR(255),\n    user_ID INTEGER NOT NULL,\n    FOREIGN KEY (application_ID) REFERENCES Application(application_ID),\n    FOREIGN KEY (user_ID) REFERENCES User(user_ID)\n);\n\nCREATE TABLE Error_Information (\n    error_ID INTEGER PRIMARY KEY,\n    error_code VARCHAR(255),\n    error_description VARCHAR(255),\n    occurrence_time DATETIME,\n    return_status VARCHAR(255),\n    service_ID INTEGER NOT NULL,\n    FOREIGN KEY (service_ID) REFERENCES Web_Service(service_ID)\n);\n\nCREATE TABLE Service_Monitoring (\n    call_time DATETIME,\n    delay_time DATETIME,\n    monitoring_ID INTEGER PRIMARY KEY,\n    return_status VARCHAR(255),\n    service_ID INTEGER NOT NULL,\n    FOREIGN KEY (service_ID) REFERENCES Web_Service(service_ID)\n);\n\nCREATE TABLE Statistics (\n    call_count INTEGER,\n    service_ID INTEGER NOT NULL,\n    statistic_ID INTEGER PRIMARY KEY,\n    success_rate FLOAT,\n    time_period DATETIME,\n    FOREIGN KEY (service_ID) REFERENCES Web_Service(service_ID)\n);\n\nCREATE TABLE Error_and_Monitoring_Association (\n    error_ID INTEGER NOT NULL,\n    monitoring_ID INTEGER NOT NULL,\n    FOREIGN KEY (error_ID) REFERENCES Error_Information(error_ID),\n    FOREIGN KEY (monitoring_ID) REFERENCES Service_Monitoring(monitoring_ID)\n);",
+      "assign_to": "gcc",
+      "assign_to_round2": "cyx",
+      "domain": [
+        "信息传输、软件和信息技术服务业",
+        "互联网和相关服务"
+      ],
+      "id": "67552f0a13602ec03b41a900",
+      "question": "Business Requirements Description:\nThis system is designed for managing and monitoring web services in various applications. Key requirements include:\nEach user has a unique username, email, and role. User roles are associated with specific permissions. Users can be assigned different roles and permissions that are linked to particular applications.\nEach application has a unique ID, code, name, and type.\nEach web service has a unique ID, name, description, and creation date. It records error information, including error codes, descriptions, timestamps, and return status.\nMonitors the invocation of web services, recording details like invocation time, return status, delay time, and other performance metrics.\nTracks statistics such as success rate and call count over a specific time period.\nTracks which users are authorized to access which applications.\nLinks error data with monitoring data to enable detailed analysis and reporting.",
+      "remarks": "因为每个用户可以被分配不同的角色和权限，而模式6已经体现这种联系，故所以删除用户模式中的角色属性"
+    }
+  },
+  {
+    "dataset": "ddl",
+    "line": 313,
+    "record": {
+      "answer": "CREATE TABLE User (\n    Email VARCHAR(255),\n    Last_Login_Time DATETIME,\n    Password VARCHAR(255),\n    Phone VARCHAR(255),\n    Registration_Time DATETIME,\n    Role VARCHAR(255),\n    User_ID INTEGER PRIMARY KEY,\n    User_Name VARCHAR(255)\n);\n\nCREATE TABLE Project (\n    Creation_Time DATETIME,\n    Introduction VARCHAR(255),\n    Name VARCHAR(255),\n    Project_ID INTEGER PRIMARY KEY,\n    Project_Status VARCHAR(255),\n    Responsible_Person_ID INTEGER\n);\n\nCREATE TABLE Project_Version (\n    Is_Stable_Version null,\n    Project_ID null,\n    Release_Date null,\n    Version_Description null,\n    Version_ID null,\n    Version_Name null,\n    PRIMARY KEY (Version_ID, Project_ID)\n);\n\nCREATE TABLE Code_Submission (\n    Code_Path VARCHAR(255),\n    Project_ID INTEGER NOT NULL,\n    Submission_Description VARCHAR(255),\n    Submission_Time DATETIME,\n    User_ID INTEGER NOT NULL,\n    PRIMARY KEY (User_ID, Project_ID, Submission_Time),\n    FOREIGN KEY (Project_ID) REFERENCES Project(Project_ID),\n    FOREIGN KEY (User_ID) REFERENCES User(User_ID)\n);\n\nCREATE TABLE Task (\n    Assigned_To_User_ID INTEGER NOT NULL,\n    End_Time DATETIME,\n    Project_ID INTEGER NOT NULL,\n    Start_Time DATETIME,\n    Task_Description VARCHAR(255),\n    Task_Name VARCHAR(255),\n    Task_Status VARCHAR(255),\n    PRIMARY KEY (Project_ID, Assigned_To_User_ID, Start_Time),\n    FOREIGN KEY (Assigned_To_User_ID) REFERENCES User(User_ID),\n    FOREIGN KEY (Project_ID) REFERENCES Project(Project_ID)\n);",
+      "assign_to": "cs",
+      "assign_to_round2": "szh2",
+      "domain": [
+        "信息传输、软件和信息技术服务业",
+        "软件和信息技术服务业"
+      ],
+      "id": "67552f0a13602ec03b41aa07",
+      "question": "The database is a software project management system primarily designed to manage the development process of software projects, task assignments for team members, code submissions, and project version management. The key tables involved in the system include: User Table, Project Table, Project Version Table, Task Table, Code Submission Table. Below is a brief description of the database function.\n\n1.User Management:   \nRecords the basic information of each user in the system, who may be a project manager, developer, or tester.  \nFields: User ID, User Name, Password, Email, Phone, Role, Registration Time, Last Login Time\n\n2.Project Management: \nRecords the basic information of software development projects, each project has a responsible person and manages its current status.  \nFields: Project ID, Project Name, Project Introduction, Responsible Person ID, Creation Time, Project Status\n\n3. Project Version Management:\nRecords the version information of each project, including version number, release date, etc. Each version is associated with a specific project.  \nFields: Version ID, Project ID, Version Name, Release Date, Version Description, Is Stable Version\n\n4. Task Management:\nRecords the assignment and progress of tasks within the project; tasks are the work that developers need to complete. Each task has a start time, end time, and task status.  \nFields: Project ID, Assigned To User ID, Task Name, Task Status, Start Time, End Time, Task Description\n\n5. Code Submission Management:  \nRecords the code information submitted by developers to the project, including submission time, submission description, code path, etc.  \nFields: User ID, Project ID, Submission Time, Submission Description, Code Path",
+      "remarks": "CS 2025/1/16"
+    }
+  },
+  {
+    "dataset": "ddl",
+    "line": 342,
+    "record": {
+      "answer": "CREATE TABLE Customer (\n    Customer_Contact_Information VARCHAR(255),\n    Customer_ID INTEGER PRIMARY KEY,\n    Customer_Name VARCHAR(255)\n);\n\nCREATE TABLE Product (\n    Product_ID INTEGER PRIMARY KEY,\n    Product_Inventory_Quantity INTEGER,\n    Product_Name VARCHAR(255),\n    Product_Price FLOAT\n);\n\nCREATE TABLE Order (\n    Order_ID INTEGER PRIMARY KEY,\n    Order_Status VARCHAR(255),\n    Ordering_Customer_ID INTEGER NOT NULL,\n    FOREIGN KEY (Ordering_Customer_ID) REFERENCES Customer(Customer_ID)\n);\n\nCREATE TABLE Ordered_Product (\n    Order_ID INTEGER NOT NULL,\n    Ordered_Product_ID INTEGER NOT NULL,\n    Ordered_Quantity INTEGER,\n    PRIMARY KEY (Order_ID, Ordered_Product_ID),\n    FOREIGN KEY (Order_ID) REFERENCES Order(Order_ID),\n    FOREIGN KEY (Ordered_Product_ID) REFERENCES Product(Product_ID)\n);\n\nCREATE TABLE Picking_List (\n    Order_ID INTEGER NOT NULL,\n    Picking_List_ID INTEGER PRIMARY KEY,\n    Picking_Status VARCHAR(255),\n    FOREIGN KEY (Order_ID) REFERENCES Order(Order_ID)\n);\n\nCREATE TABLE Delivery_Order (\n    Delivery_Order_ID INTEGER PRIMARY KEY NOT NULL,\n    Delivery_Status VARCHAR(255),\n    Delivery_Time DATETIME,\n    FOREIGN KEY (Delivery_Order_ID) REFERENCES Order(Order_ID)\n);\n\nCREATE TABLE Customer_Invoice (\n    Customer_Invoice_ID INTEGER PRIMARY KEY,\n    Invoice_Amount FLOAT,\n    Invoice_Date DATETIME,\n    Order_ID INTEGER NOT NULL,\n    FOREIGN KEY (Order_ID) REFERENCES Order(Order_ID)\n);\n\nCREATE TABLE Accounts_Receivable_Report (\n    Order_ID INTEGER NOT NULL,\n    Receivable_Amount FLOAT,\n    Report_Date DATETIME,\n    Report_ID INTEGER PRIMARY KEY,\n    FOREIGN KEY (Order_ID) REFERENCES Order(Order_ID)\n);\n\nCREATE TABLE Picked_Product (\n    Picked_Product_ID INTEGER NOT NULL,\n    Picked_Product_Quantity INTEGER,\n    Picking_List_ID INTEGER NOT NULL,\n    PRIMARY KEY (Picking_List_ID, Picked_Product_ID),\n    FOREIGN KEY (Picked_Product_ID) REFERENCES Product(Product_ID),\n    FOREIGN KEY (Picking_List_ID) REFERENCES Picking_List(Picking_List_ID)\n);",
+      "assign_to": "cyx",
+      "assign_to_round2": "hzb",
+      "domain": [
+        "批发和零售业",
+        "批发业"
+      ],
+      "id": "67552f0b13602ec03b41aad7",
+      "question": "The business requirements for the order processing system are described as follows: The enterprise has multiple customers, each with a customer ID, name, and contact information. The enterprise offers a variety of products, each with a product ID, product name, price, and inventory quantity. Customers can place orders, with each order having an order ID, product ID, customer ID who placed the order, order quantity, and order status. An order can include multiple products. For each order, a picking list is generated, which includes a picking list ID, order ID, product ID, picking quantity, and picking status. Based on the order and customer information, a delivery order is generated, which includes a delivery order ID, order ID, delivery time, and delivery status. Based on the order and customer information, a customer invoice is generated, which includes an invoice ID, order ID, invoice amount, and invoice date. Based on the customer and order information, an accounts receivable report is generated, which includes a report ID, order ID, receivable amount, and report date. The system ensures the entire process from customer order placement to product delivery and invoice generation is efficient and accurate through the collaborative work of multiple modules.",
+      "remarks": ""
+    }
+  },
+  {
+    "dataset": "ddl",
+    "line": 349,
+    "record": {
+      "answer": "CREATE TABLE Customer (\n    Address VARCHAR(255),\n    Contact_Number VARCHAR(255),\n    Customer_ID INTEGER PRIMARY KEY,\n    Name VARCHAR(255)\n);\n\nCREATE TABLE Raw_Material (\n    Raw_Material_ID INTEGER PRIMARY KEY,\n    Raw_Material_Name VARCHAR(255),\n    Specification VARCHAR(255)\n);\n\nCREATE TABLE Financial_Record (\n    Amount INTEGER,\n    Date DATETIME,\n    Status VARCHAR(255),\n    Transaction_ID INTEGER PRIMARY KEY,\n    Transaction_Type VARCHAR(255)\n);\n\nCREATE TABLE Supplier (\n    Contact_Information VARCHAR(255),\n    Supplier_ID INTEGER PRIMARY KEY,\n    Supplier_Name VARCHAR(255)\n);\n\nCREATE TABLE Pizza_Recipe (\n    Raw_Material_ID INTEGER,\n    Recipe_ID INTEGER PRIMARY KEY,\n    Usage_Amount INTEGER\n);\n\nCREATE TABLE Sales_Order (\n    Customer_ID INTEGER NOT NULL,\n    Expected_Delivery_Date DATETIME,\n    Order_ID INTEGER PRIMARY KEY,\n    Order_Status VARCHAR(255),\n    FOREIGN KEY (Customer_ID) REFERENCES Customer(Customer_ID)\n);\n\nCREATE TABLE Purchase_Order (\n    Order_Quantity INTEGER,\n    Order_Status VARCHAR(255),\n    Purchase_Order_ID INTEGER PRIMARY KEY,\n    Raw_Material_ID INTEGER NOT NULL,\n    Supplied_Quantity INTEGER,\n    Supplier_ID INTEGER NOT NULL,\n    FOREIGN KEY (Raw_Material_ID) REFERENCES Raw_Material(Raw_Material_ID),\n    FOREIGN KEY (Supplier_ID) REFERENCES Supplier(Supplier_ID)\n);\n\nCREATE TABLE Product (\n    Product_ID INTEGER PRIMARY KEY,\n    Product_Name VARCHAR(255),\n    Recipe_ID INTEGER NOT NULL,\n    FOREIGN KEY (Recipe_ID) REFERENCES Pizza_Recipe(Recipe_ID)\n);\n\nCREATE TABLE Production_Plan (\n    Order_ID INTEGER NOT NULL,\n    Production_Plan_ID INTEGER PRIMARY KEY,\n    Production_Status VARCHAR(255),\n    FOREIGN KEY (Order_ID) REFERENCES Sales_Order(Order_ID)\n);\n\nCREATE TABLE Delivery_Record (\n    Delivery_Location VARCHAR(255),\n    Delivery_Record_ID INTEGER PRIMARY KEY,\n    Delivery_Time DATETIME,\n    Order_ID INTEGER NOT NULL,\n    Status VARCHAR(255),\n    FOREIGN KEY (Order_ID) REFERENCES Sales_Order(Order_ID)\n);\n\nCREATE TABLE Inventory_Management (\n    Inventory_ID INTEGER PRIMARY KEY,\n    Product_ID INTEGER NOT NULL,\n    Quantity INTEGER,\n    Status VARCHAR(255),\n    FOREIGN KEY (Product_ID) REFERENCES Product(Product_ID)\n);",
+      "assign_to": "dyq",
+      "assign_to_round2": "szc",
+      "domain": [
+        "住宿和餐饮业",
+        "餐饮业"
+      ],
+      "id": "67552f0b13602ec03b41ab17",
+      "question": "The design of the information management system for a pizza shop is as follows:\nThe system includes Customer Management, Sales Order Processing, Production Planning, Raw Material Procurement, Product Inventory Management, Order Delivery, and Financial Records.\nCustomer information comprises Customer ID, Name, Contact Number, and Address.\nSales Order records the customer's order details, including Order ID, Customer ID, Expected Delivery Date, and Order Status.\nProduction Planning determines the production sequence and quantity based on Sales Orders and inventory status, and records the production status.  \nInventory Management tracks the quantity and status of pizzas and raw materials.\nPurchase Orders are used to order raw materials from suppliers, documenting Supplier ID, Raw Material ID, Order Quantity, Supply Quantity, and Order Status.\nDelivery Records track the delivery details of orders, including Delivery Time, Location, and Status.\nFinancial Records manage income and expenses, recording Transaction Type, Amount, Date, and Status.\nAdditionally, the system includes Supplier Information, Pizza Recipes, and Raw Material Details to ensure the smooth progression of production processes.",
+      "remarks": ""
+    }
+  }
+]

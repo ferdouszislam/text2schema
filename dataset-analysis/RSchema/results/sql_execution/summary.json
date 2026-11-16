@@ -1,0 +1,74 @@
+{
+  "foreign_keys_enabled": true,
+  "original_scripts": 381,
+  "original_scripts_failed": 66,
+  "original_scripts_ok": 315,
+  "python_version": "3.14.7",
+  "schemas_with_multiple_failing_statements": 34,
+  "script_sha256": "28e5b9598b7af6af4bb4998a1641c3e7fcf2b5c01302dc59bcc35ddd5e1f5161",
+  "source": {
+    "blank_lines": 0,
+    "bytes": 908416,
+    "duplicate_object_keys": [],
+    "field_types": {
+      "answer": {
+        "str": 381
+      },
+      "assign_to": {
+        "str": 381
+      },
+      "assign_to_round2": {
+        "str": 381
+      },
+      "domain": {
+        "list": 381
+      },
+      "id": {
+        "str": 381
+      },
+      "question": {
+        "str": 381
+      },
+      "remarks": {
+        "str": 381
+      }
+    },
+    "fields": {
+      "answer": 381,
+      "assign_to": 381,
+      "assign_to_round2": 381,
+      "domain": 381,
+      "id": 381,
+      "question": 381,
+      "remarks": 381
+    },
+    "filename": "annotation_ddl.jsonl",
+    "physical_lines": 381,
+    "records": 381,
+    "sha256": "ce17d9aac0acba21b6d91aff9af1d3663ce1598176dea391b04dbfcb16a4f2e6"
+  },
+  "sqlite_version": "3.50.4",
+  "statement_error_counts": {
+    "near \"-\": syntax error": 16,
+    "near \"/\": syntax error": 3,
+    "near \"Check\": syntax error": 1,
+    "near \"Group\": syntax error": 1,
+    "near \"Order\": syntax error": 73,
+    "near \"Table\": syntax error": 3,
+    "near \"Transaction\": syntax error": 6,
+    "near \"Update\": syntax error": 2,
+    "near \"to\": syntax error": 1,
+    "no such column: Adding_time": 1,
+    "no such column: Device_ID": 1,
+    "no such column: Employee_ID": 1,
+    "no such column: Information_ID": 1,
+    "no such column: Record_ID": 1,
+    "no such column: User_Dynamic_ID": 1,
+    "no such column: clock": 1,
+    "unrecognized token: \"'s_Last_Login DATETIME,\n    User_ID INTEGER PRIMARY KEY,\n    User_IP_Address VARCHAR(255),\n    User_Port_Number INTEGER,\n    Username VARCHAR(255)\n);\"": 1,
+    "unrecognized token: \"'s_treatment_information VARCHAR(255),\n    registration_category_ID INTEGER,\n    ward_ID INTEGER\n);\"": 1
+  },
+  "statements_attempted": 1748,
+  "statements_failed": 115,
+  "statements_ok": 1633
+}

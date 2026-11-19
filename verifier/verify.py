@@ -1,23 +1,16 @@
 """Verify relational design properties under functional dependencies with Z3."""
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 from itertools import combinations
 import re
 
 import z3
 
+from util.relational_schema import parse_identifier, parse_relational_schema
 
-_NAME = re.compile(r"[^\W\d]\w*(?:\.[^\W\d]\w*)*")
-_RELATION = re.compile(r"([^()]+)\(([^()]*)\)")
+
 _FD = re.compile(r"\[([^\[\]]*)\]\s*->\s*\[([^\[\]]*)\]")
-
-
-@dataclass(frozen=True)
-class _Relation:
-    name: str
-    columns: dict[str, str]  # logical attribute -> declared column name
-    primary_key: frozenset[str]
 
 
 @dataclass(frozen=True)
@@ -27,67 +20,14 @@ class _Dependency:
     source: str
 
 
-def _name(value: str, location: str) -> str:
-    value = value.strip()
-    if not _NAME.fullmatch(value):
-        raise ValueError(f"{location}: invalid identifier {value!r}.")
-    return value
-
-
-def _parse_inputs(schema_text, dependency_lines, aliases):
-    if not isinstance(schema_text, str):
-        raise ValueError("Relational schema must be text with one relation per line.")
-    if aliases is not None and not isinstance(aliases, Mapping):
-        raise ValueError("Attribute aliases must map declared names to logical names.")
-    aliases = {} if aliases is None else aliases
-    for declared, logical in aliases.items():
-        if not all(isinstance(value, str) and _NAME.fullmatch(value)
-                   for value in (declared, logical)):
-            raise ValueError(f"Invalid attribute alias {declared!r}: {logical!r}.")
-
-    relations = []
-    relation_names = set()
-    logical_names = {}
-    for line_number, line in enumerate(schema_text.splitlines(), start=1):
-        if not line.strip():
-            continue
-        location = f"Schema line {line_number}"
-        match = _RELATION.fullmatch(line.strip())
-        if match is None:
-            raise ValueError(f"{location}: expected Relation(Column, <u>Key</u>).")
-        name = _name(match[1], location)
-        if name in relation_names:
-            raise ValueError(f"{location}: duplicate relation {name!r}.")
-        relation_names.add(name)
-        columns = {}
-        key = set()
-        for column in match[2].split(","):
-            column = column.strip()
-            is_key = column.startswith("<u>") and column.endswith("</u>")
-            declared = _name(column[3:-4] if is_key else column, location)
-            if declared in logical_names:
-                raise ValueError(f"{location}: column {declared!r} must be globally unique.")
-            logical = aliases.get(declared, declared)
-            if logical in columns:
-                raise ValueError(f"{location}: two columns map to logical attribute {logical!r}.")
-            columns[logical] = declared
-            logical_names[declared] = logical
-            if is_key:
-                key.add(logical)
-        relations.append(_Relation(name, columns, frozenset(key)))
-    if not relations:
-        raise ValueError("Relational schema must contain at least one relation.")
-    unknown_aliases = aliases.keys() - logical_names.keys()
-    if unknown_aliases:
-        raise ValueError(f"Aliases reference undeclared columns {_display(unknown_aliases)}.")
+def _parse_inputs(schema_text, dependency_lines):
+    relations, attributes = parse_relational_schema(schema_text)
 
     if isinstance(dependency_lines, str):
         dependency_lines = dependency_lines.splitlines()
     if not isinstance(dependency_lines, Sequence):
         raise ValueError("Functional dependencies must be text or a sequence of strings.")
 
-    attributes = sorted(set(logical_names.values()))
-    references = {**{item: item for item in attributes}, **logical_names}
     dependencies = []
     for line_number, line in enumerate(dependency_lines, start=1):
         location = f"Functional dependency line {line_number}"
@@ -101,17 +41,17 @@ def _parse_inputs(schema_text, dependency_lines, aliases):
             raise ValueError(f"{location}: expected [A, B] -> [C].")
         left = []
         if match[1].strip():
-            left = [_name(item, location) for item in match[1].split(",")]
-        right = [_name(item, location) for item in match[2].split(",")]
-        unknown = set(left + right) - references.keys()
+            left = [parse_identifier(item, location) for item in match[1].split(",")]
+        right = [parse_identifier(item, location) for item in match[2].split(",")]
+        unknown = set(left + right) - attributes
         if unknown:
             raise ValueError(f"{location}: unknown attributes {_display(unknown)} in {line!r}.")
         dependencies.append(_Dependency(
-            frozenset(references[item] for item in left),
-            frozenset(references[item] for item in right),
+            frozenset(left),
+            frozenset(right),
             line,
         ))
-    return relations, dependencies, attributes
+    return relations, dependencies, sorted(attributes)
 
 
 def _display(attributes):
@@ -201,24 +141,23 @@ def _normal_form_violations(relations, closure):
                 z3.And(closure.reached[dependent], z3.Not(superkey)),
             )
             for determinant in determinants:
-                left = sorted(relation.columns[item] for item in determinant)
-                right = relation.columns[dependent]
-                partial = [
-                    (sorted(relation.columns[item] for item in key), key == relation.primary_key)
-                    for key in candidate_keys if determinant < key
-                ]
+                left = sorted(determinant)
+                right = dependent
+                partial = [key for key in candidate_keys if determinant < key]
                 if partial:
-                    keys = ", ".join(_display(key) + (" (declared primary key)" if marked else "")
-                                     for key, marked in partial)
+                    keys = ", ".join(
+                        _display(key) + (" (declared primary key)" if key == relation.primary_key else "")
+                        for key in partial
+                    )
                     second_nf.append({
                         "relation": relation.name, "determinant": left, "dependent": right,
-                        "candidate_keys": [key for key, _ in partial],
+                        "candidate_keys": [sorted(key) for key in partial],
                         "message": (f"{relation.name}: {_display(left)} -> [{right}] is a partial "
                                     f"dependency. The determinant is a proper subset of "
                                     f"the following candidate keys: {keys}. {right} is non-prime."),
                     })
                 determined = closure.of(determinant)
-                missing = sorted(relation.columns[item] for item in attributes - determined)
+                missing = sorted(attributes - determined)
                 third_nf.append({
                     "relation": relation.name, "determinant": left, "dependent": right,
                     "undetermined_attributes": missing,
@@ -286,8 +225,7 @@ def _preservation_violations(relations, dependencies, attributes, closure):
             ]
             relation_columns = {}
             for relation in relations:
-                columns = sorted(declared for logical, declared in relation.columns.items()
-                                 if logical in involved)
+                columns = sorted(involved.intersection(relation.columns))
                 if columns:
                     relation_columns[relation.name] = columns
             locations = ", ".join(f"{name}{_display(columns)}"
@@ -311,30 +249,24 @@ def _preservation_violations(relations, dependencies, attributes, closure):
 def verify_schema(
     relational_schema: str,
     functional_dependencies: Sequence[str] | str,
-    *,
-    attribute_aliases: Mapping[str, str] | None = None,
 ) -> dict:
     """Check 2NF, 3NF, lossless decomposition, and dependency preservation.
 
     ``relational_schema`` has one ``Relation(A, <u>B</u>)`` declaration per
-    line. Use globally unique, case-sensitive column names. Identifiers are
-    letters, digits and underscores, starting with a letter or underscore.
-    Dot-qualified names follow the same rule for each segment. Underline all
-    columns of a declared primary key with literal ``<u>`` and ``</u>`` tags.
-    The markers are used in feedback. The supplied FDs define all implication
-    and candidate-key calculations.
+    line. Column names are case-sensitive and unique within each relation.
+    The same name in different relations represents the same logical
+    attribute. Use distinct names for different attributes, such as
+    ``Student_Name`` and ``Course_Name``. Identifiers contain letters, digits,
+    and underscores and start with a letter or underscore. A dotted name
+    follows the same rule for each segment. Underline each declared primary
+    key column with literal ``<u>`` and ``</u>`` tags. The markers are used in
+    feedback. The supplied FDs define implication and candidate keys.
 
     ``functional_dependencies`` is multiline text or a sequence of strings of
-    the form ``[A, B] -> [C, D]`` using exact declared column names or logical
-    identifiers. A declared name takes precedence if both match. ``[]`` is
-    allowed on the left for a constant attribute. Blank lines are ignored in
-    both inputs, and section headings should be omitted.
-
-    ``attribute_aliases`` optionally maps declared column names to logical
-    identifiers. Map columns in different relations to the same identifier
-    when they stand for the same universal-relation attribute. An unmapped
-    column is its own logical identifier. The universal relation is assumed
-    to have the union of these logical attributes.
+    the form ``[A, B] -> [C, D]`` using the column names from the schema.
+    ``[]`` is allowed on the left for a constant attribute. Blank lines are
+    ignored in both inputs, and section headings should be omitted. The
+    universal relation is assumed to have the union of the named attributes.
 
     Return a JSON-serializable dictionary. ``verified`` is true when all four
     checks pass. ``checks`` has entries ``2NF``, ``3NF``,
@@ -345,9 +277,7 @@ def verify_schema(
     when all checks pass. Malformed inputs raise ``ValueError``. An
     inconclusive Z3 result raises ``RuntimeError``.
     """
-    relations, dependencies, attributes = _parse_inputs(
-        relational_schema, functional_dependencies, attribute_aliases,
-    )
+    relations, dependencies, attributes = _parse_inputs(relational_schema, functional_dependencies)
     closure = _Closure(attributes, dependencies)
     second_nf, third_nf = _normal_form_violations(relations, closure)
     violations_by_check = {

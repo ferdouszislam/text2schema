@@ -22,52 +22,45 @@ class VerificationTests(unittest.TestCase):
 
     def test_course_example_preserves_shared_logical_attributes(self):
         schema = """
-        Student(<u>Student_StudentId</u>, StudentName, StudentDOB)
-        Course(<u>Course_CourseId</u>, CourseTitle, CourseDescription)
-        CoursesTaken(<u>CoursesTaken_StudentId</u>, <u>CoursesTaken_CourseId</u>, CourseGrade)
+        Student(<u>Student_Id</u>, Student_Name, Student_DOB)
+        Course(<u>Course_Id</u>, Course_Title, Course_Description)
+        CoursesTaken(<u>Student_Id</u>, <u>Course_Id</u>, Course_Grade)
         """
         dependencies = """
-        [StudentId] -> [StudentName, StudentDOB]
-        [CourseId] -> [CourseTitle, CourseDescription]
-        [StudentId, CourseId] -> [CourseGrade]
+        [Student_Id] -> [Student_Name, Student_DOB]
+        [Course_Id] -> [Course_Title, Course_Description]
+        [Student_Id, Course_Id] -> [Course_Grade]
         """
-        aliases = {
-            "Student_StudentId": "StudentId",
-            "CoursesTaken_StudentId": "StudentId",
-            "Course_CourseId": "CourseId",
-            "CoursesTaken_CourseId": "CourseId",
-        }
-        result = verify_schema(schema, dependencies, attribute_aliases=aliases)
+        result = verify_schema(schema, dependencies)
         self.assert_outcomes(result, second=True, third=True, lossless=True, preserved=True)
 
-    def test_matching_physical_suffixes_do_not_create_a_join(self):
+    def test_matching_suffixes_do_not_create_a_join(self):
         schema = """
-        LeftPart(<u>LeftPart_Id</u>, LeftValue)
-        RightPart(<u>RightPart_Id</u>, RightValue)
+        Student(<u>Student_Id</u>, Student_Name)
+        Course(<u>Course_Id</u>, Course_Name)
         """
-        dependencies = ["[LeftPart_Id] -> [LeftValue]", "[RightPart_Id] -> [RightValue]"]
+        dependencies = ["[Student_Id] -> [Student_Name]", "[Course_Id] -> [Course_Name]"]
         result = verify_schema(schema, dependencies)
         self.assert_outcomes(result, second=True, third=True, lossless=False, preserved=True)
 
     def test_partial_dependency_on_alternate_candidate_key(self):
-        schema = "R(<u>A</u>, <u>B</u>, C, DependentValue)"
-        dependencies = ["[A, B] -> [C]", "[A, C] -> [B]", "[C] -> [DependentValue]"]
+        schema = "R(<u>A</u>, <u>B</u>, C, Dependent_Value)"
+        dependencies = ["[A, B] -> [C]", "[A, C] -> [B]", "[C] -> [Dependent_Value]"]
         result = verify_schema(schema, dependencies)
         self.assert_outcomes(result, second=False, third=False, lossless=True, preserved=True)
         self.assertIn("2NF", result["feedback"])
-        self.assertIn("DependentValue", result["feedback"])
+        self.assertIn("Dependent_Value", result["feedback"])
 
     def test_projected_dependency_implied_via_an_outside_attribute(self):
         schema = """
-        R(<u>A</u>, DependentValue, <u>C</u>)
-        S(<u>S_A</u>, D)
-        T(<u>T_D</u>, T_DependentValue)
+        R(<u>A</u>, Dependent_Value, <u>C</u>)
+        S(<u>A</u>, D)
+        T(<u>D</u>, Dependent_Value)
         """
-        dependencies = ["[A] -> [D]", "[D] -> [DependentValue]"]
-        aliases = {"S_A": "A", "T_D": "D", "T_DependentValue": "DependentValue"}
-        result = verify_schema(schema, dependencies, attribute_aliases=aliases)
+        dependencies = ["[A] -> [D]", "[D] -> [Dependent_Value]"]
+        result = verify_schema(schema, dependencies)
         self.assert_outcomes(result, second=False, third=False, lossless=True, preserved=True)
-        self.assertIn("DependentValue", result["feedback"])
+        self.assertIn("Dependent_Value", result["feedback"])
 
     def test_transitive_dependency_violates_only_third_normal_form(self):
         result = verify_schema("R(<u>A</u>, B, C)", ["[A] -> [B]", "[B] -> [C]"])
@@ -75,13 +68,13 @@ class VerificationTests(unittest.TestCase):
 
     def test_feedback_covers_violating_attributes_in_each_relation(self):
         schema = """
-        First(<u>A</u>, <u>B</u>, FirstValue, SecondValue)
-        Second(<u>C</u>, <u>D</u>, ThirdValue)
+        First(<u>A</u>, <u>B</u>, First_Value, Second_Value)
+        Second(<u>C</u>, <u>D</u>, Third_Value)
         """
-        dependencies = ["[A] -> [FirstValue, SecondValue]", "[C] -> [ThirdValue]"]
+        dependencies = ["[A] -> [First_Value, Second_Value]", "[C] -> [Third_Value]"]
         result = verify_schema(schema, dependencies)
         self.assert_outcomes(result, second=False, third=False, lossless=False, preserved=True)
-        for attribute in ("FirstValue", "SecondValue", "ThirdValue"):
+        for attribute in ("First_Value", "Second_Value", "Third_Value"):
             self.assertIn(attribute, result["feedback"])
 
     def test_third_normal_form_allows_prime_dependent(self):
@@ -91,9 +84,9 @@ class VerificationTests(unittest.TestCase):
     def test_dependency_preserving_decomposition_can_be_lossy(self):
         schema = """
         R(<u>A</u>, B)
-        S(<u>S_B</u>, <u>C</u>)
+        S(<u>B</u>, <u>C</u>)
         """
-        result = verify_schema(schema, ["[A] -> [B]"], attribute_aliases={"S_B": "B"})
+        result = verify_schema(schema, ["[A] -> [B]"])
         self.assert_outcomes(result, second=True, third=True, lossless=False, preserved=True)
         witness, = result["checks"]["lossless_decomposition"]["violations"]
         target = witness["spurious_tuple"]
@@ -105,14 +98,14 @@ class VerificationTests(unittest.TestCase):
     def test_lossless_decomposition_can_fail_to_preserve_dependency(self):
         schema = """
         R(<u>A</u>, <u>C</u>)
-        S(<u>S_C</u>, B)
+        S(<u>C</u>, B)
         """
         dependencies = ["[A, B] -> [C]", "[C] -> [B]"]
-        result = verify_schema(schema, dependencies, attribute_aliases={"S_C": "C"})
+        result = verify_schema(schema, dependencies)
         self.assert_outcomes(result, second=True, third=True, lossless=True, preserved=False)
         violation, = result["checks"]["dependency_preservation"]["violations"]
         self.assertEqual(violation["missing_attributes"], ["C"])
-        self.assertEqual(violation["relation_columns"], {"R": ["A", "C"], "S": ["B", "S_C"]})
+        self.assertEqual(violation["relation_columns"], {"R": ["A", "C"], "S": ["B", "C"]})
         first, second = violation["witness_rows"]
         self.assertEqual((first["A"], first["B"]), (second["A"], second["B"]))
         self.assertNotEqual(first["C"], second["C"])
@@ -120,33 +113,34 @@ class VerificationTests(unittest.TestCase):
     def test_multiway_decomposition_can_be_lossless_when_each_pair_is_lossy(self):
         schema = """
         R(<u>A</u>, C, <u>D</u>, <u>E</u>)
-        S(<u>B</u>, <u>S_C</u>, S_D)
-        T(<u>T_A</u>, <u>T_B</u>, <u>T_E</u>)
+        S(<u>B</u>, <u>C</u>, D)
+        T(<u>A</u>, <u>B</u>, <u>E</u>)
         """
         dependencies = ["[A, E] -> [C]", "[B, C] -> [D, E]"]
-        aliases = {"S_C": "C", "S_D": "D", "T_A": "A", "T_B": "B", "T_E": "E"}
-        result = verify_schema(schema, dependencies, attribute_aliases=aliases)
+        result = verify_schema(schema, dependencies)
         self.assert_outcomes(result, second=False, third=False, lossless=True, preserved=False)
 
     def test_preservation_combines_projected_dependencies_across_relations(self):
         schema = """
         R(<u>A</u>, Intermediate)
-        S(<u>S_Intermediate</u>, C)
+        S(<u>Intermediate</u>, C)
         """
         dependencies = ["[A] -> [Intermediate, C]", "[Intermediate] -> [C]"]
-        result = verify_schema(
-            schema, dependencies, attribute_aliases={"S_Intermediate": "Intermediate"}
-        )
+        result = verify_schema(schema, dependencies)
         self.assert_outcomes(result, second=True, third=True, lossless=True, preserved=True)
 
     def test_empty_determinant_can_be_a_partial_dependency(self):
-        result = verify_schema("R(<u>A</u>, ConstantValue)", ["[] -> [ConstantValue]"])
+        result = verify_schema("R(<u>A</u>, Constant_Value)", ["[] -> [Constant_Value]"])
         self.assert_outcomes(result, second=False, third=False, lossless=True, preserved=True)
-        self.assertIn("ConstantValue", result["feedback"])
+        self.assertIn("Constant_Value", result["feedback"])
+
+    def test_rejects_attribute_repeated_within_one_relation(self):
+        with self.assertRaisesRegex(ValueError, "Student_Id"):
+            verify_schema("Student(<u>Student_Id</u>, Student_Id)", [])
 
     def test_unknown_dependency_attribute_is_an_input_error(self):
-        with self.assertRaisesRegex(ValueError, "CouseId"):
-            verify_schema("Course(<u>CourseId</u>, Title)", ["[CouseId] -> [Title]"])
+        with self.assertRaisesRegex(ValueError, "Couse_Id"):
+            verify_schema("Course(<u>Course_Id</u>, Course_Title)", ["[Couse_Id] -> [Course_Title]"])
 
 
 if __name__ == "__main__":

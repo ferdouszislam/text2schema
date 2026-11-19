@@ -1,6 +1,6 @@
 # How the Z3 verifier works
 
-`verify_schema` reads the proposed relations and the original functional dependencies (FDs). It translates declared column names to logical attributes using the caller's alias mapping. Let `U` be the union of those logical attributes, `Rᵢ` the logical attributes of one proposed relation, and `F` the original FDs. The verifier treats each `Rᵢ` as a projection of the same universal relation over `U`.
+`verify_schema` reads the proposed relations and the original functional dependencies (FDs). The same case-sensitive name in different relations denotes one logical attribute. Let `U` be the union of the attribute names, `Rᵢ` the attributes of one proposed relation, and `F` the original FDs. The verifier treats each `Rᵢ` as a projection of the same universal relation over `U`.
 
 The checks use the relational model with set semantics and equality of attribute values. The supplied FDs define the constraints on the universal relation. Underlined columns identify the declared primary key for feedback. Candidate keys for the formal checks come from `F`. A verdict applies to this supplied model, so the caller needs to supply the intended FDs and shared attributes. An attribute omitted from both the candidate and the FDs is outside the input model.
 
@@ -24,7 +24,7 @@ For example, suppose `R(A, B, C, D)` has `[A, B] -> [C]`, `[A, C] -> [B]`, and `
 
 A local FD `X -> a` violates 3NF when `a` is outside `X`, `X` is not a superkey of that relation, and `a` is non-prime. For every non-prime `a` in `Rᵢ`, the verifier uses Z3 to search for seeds from `Rᵢ` excluding `a` that reach `a` and leave at least one attribute of `Rᵢ` unreached. It reports the inclusion-minimal seeds and the columns they fail to determine. Taking a smaller determinant cannot turn a non-superkey into a superkey, so every 3NF violation has a minimal witness of this form. [Database System Concepts, chapter 7](https://codex.cs.yale.edu/avi/db-book/slides-dir/PDF-dir/ch7.pdf)
 
-In `Employee(EmployeeId, DeptId, DeptName)` with `[EmployeeId] -> [DeptId]` and `[DeptId] -> [DeptName]`, the only candidate key is `[EmployeeId]`. The closure of `[DeptId]` is `[DeptId, DeptName]`. It misses `EmployeeId`, and `DeptName` is non-prime, so the FD violates 3NF. The empty subset of `[EmployeeId]` determines nothing here, so 2NF passes.
+In `Employee(Employee_Id, Dept_Id, Dept_Name)` with `[Employee_Id] -> [Dept_Id]` and `[Dept_Id] -> [Dept_Name]`, the only candidate key is `[Employee_Id]`. The closure of `[Dept_Id]` is `[Dept_Id, Dept_Name]`. It misses `Employee_Id`, and `Dept_Name` is non-prime, so the FD violates 3NF. The empty subset of `[Employee_Id]` determines nothing here, so 2NF passes.
 
 ## Lossless decomposition
 

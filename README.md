@@ -14,6 +14,9 @@ The environment is ignored by Git; `requirements.txt` records the project depend
 The [Z3 verifier guide](verifier/README.md) shows how to verify a proposed relational
 schema and use the feedback to refine it.
 
+The [CREATE query generator guide](create_query_generator/README.md) shows how to turn a
+verified schema and its attribute types into SQLite `CREATE TABLE` statements.
+
 The [RSchema dataset analysis](dataset/RSchema/analysis/report.md) covers file structure,
 specification lengths, schema sizes, keys, types, reference quality, and project
 implications. See [reproduction instructions](dataset/RSchema/analysis/README.md).

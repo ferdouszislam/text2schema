@@ -11,6 +11,9 @@ python -m pip install -r requirements.txt
 
 The environment is ignored by Git; `requirements.txt` records the project dependencies.
 
+The [Z3 verifier guide](verifier/README.md) shows how to verify a proposed relational
+schema and use the feedback to refine it.
+
 The [RSchema dataset analysis](dataset/RSchema/analysis/report.md) covers file structure,
 specification lengths, schema sizes, keys, types, reference quality, and project
 implications. See [reproduction instructions](dataset/RSchema/analysis/README.md).

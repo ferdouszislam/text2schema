@@ -11,6 +11,10 @@ python -m pip install -r requirements.txt
 
 The environment is ignored by Git; `requirements.txt` records the project dependencies.
 
+Run `python run_pipeline.py` to process the database specifications in the JSONL file
+set in `.env`. The [text-to-schema pipeline guide](pipeline/README.md) covers model
+settings, prompt files, and the CSV results.
+
 The [Z3 verifier guide](verifier/README.md) shows how to verify a proposed relational
 schema and use the feedback to refine it.
 

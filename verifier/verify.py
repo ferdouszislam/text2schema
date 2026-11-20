@@ -20,9 +20,11 @@ class _Dependency:
     source: str
 
 
-def _parse_inputs(schema_text, dependency_lines):
-    relations, attributes = parse_relational_schema(schema_text)
-
+def parse_functional_dependencies(
+    dependency_lines: Sequence[str] | str,
+    attributes: set[str],
+) -> list[_Dependency]:
+    """Parse FD syntax and check all references against the given attributes."""
     if isinstance(dependency_lines, str):
         dependency_lines = dependency_lines.splitlines()
     if not isinstance(dependency_lines, Sequence):
@@ -51,7 +53,7 @@ def _parse_inputs(schema_text, dependency_lines):
             frozenset(right),
             line,
         ))
-    return relations, dependencies, sorted(attributes)
+    return dependencies
 
 
 def _display(attributes):
@@ -277,7 +279,9 @@ def verify_schema(
     when all checks pass. Malformed inputs raise ``ValueError``. An
     inconclusive Z3 result raises ``RuntimeError``.
     """
-    relations, dependencies, attributes = _parse_inputs(relational_schema, functional_dependencies)
+    relations, attribute_names = parse_relational_schema(relational_schema)
+    dependencies = parse_functional_dependencies(functional_dependencies, attribute_names)
+    attributes = sorted(attribute_names)
     closure = _Closure(attributes, dependencies)
     second_nf, third_nf = _normal_form_violations(relations, closure)
     violations_by_check = {

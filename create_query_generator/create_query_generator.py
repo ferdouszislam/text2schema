@@ -7,13 +7,13 @@ from string import ascii_lowercase, ascii_uppercase
 from util.relational_schema import parse_relational_schema
 
 
-_TYPE_NAMES = {
+SUPPORTED_TYPE_NAMES = frozenset({
     "BIGINT", "BLOB", "BOOL", "BOOLEAN", "CHAR", "CHARACTER", "CHARACTER VARYING",
     "CLOB", "DATE", "DATETIME", "DEC", "DECIMAL", "DOUBLE", "DOUBLE PRECISION",
     "FLOAT", "INT", "INT2", "INT8", "INTEGER", "JSON", "MEDIUMINT", "NATIVE CHARACTER",
     "NCHAR", "NUMERIC", "NVARCHAR", "REAL", "SMALLINT", "TEXT", "TIME", "TIMESTAMP",
     "TINYINT", "UNSIGNED BIG INT", "UUID", "VARBINARY", "VARCHAR", "VARYING CHARACTER",
-}
+})
 _TYPE = re.compile(
     r"([A-Za-z][A-Za-z0-9]*(?:[ \t]+[A-Za-z][A-Za-z0-9]*)*)"
     r"(?:[ \t]*\([ \t]*([0-9]+)(?:[ \t]*,[ \t]*([0-9]+))?[ \t]*\))?"
@@ -26,7 +26,7 @@ def _normalize_type(value: str, attribute: str) -> str:
     if match is None:
         raise ValueError(f"Invalid SQL type {value!r} for {attribute!r}. Give a type declaration only.")
     base = " ".join(match[1].upper().split())
-    if base not in _TYPE_NAMES:
+    if base not in SUPPORTED_TYPE_NAMES:
         raise ValueError(f"Unsupported SQL type {value!r} for {attribute!r}.")
     arguments = [argument.lstrip("0") or "0" for argument in match.groups()[1:]
                  if argument is not None]
@@ -35,7 +35,8 @@ def _normalize_type(value: str, attribute: str) -> str:
     return base
 
 
-def _resolve_types(attribute_types: Mapping[str, str], attributes: set[str]) -> dict[str, str]:
+def normalize_attribute_types(attribute_types: Mapping[str, str], attributes: set[str]) -> dict[str, str]:
+    """Validate type coverage for the given attributes and normalize the declarations."""
     if not isinstance(attribute_types, Mapping):
         raise ValueError("Attribute types must map attribute names to SQL type strings.")
     types = {}
@@ -92,7 +93,7 @@ def generate_create_queries(
     """
     relations, attributes = parse_relational_schema(relational_schema)
     _validate_sqlite_names(relations)
-    types = _resolve_types(attribute_types, attributes)
+    types = normalize_attribute_types(attribute_types, attributes)
 
     statements = []
     for relation in relations:

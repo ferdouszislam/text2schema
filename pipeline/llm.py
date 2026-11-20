@@ -1,0 +1,239 @@
+"""Send text chat requests to a hosted model or an Ollama server."""
+
+from collections.abc import Mapping
+from dataclasses import dataclass
+import json
+from http.client import HTTPException
+from math import isfinite
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlsplit
+from urllib.request import Request, urlopen
+
+
+_NO_TEXT = "The model returned no assistant text. Check that it supports text chat."
+_MISSING = object()
+
+
+class LLMError(RuntimeError):
+    """A model request failed or did not return usable assistant text."""
+
+
+@dataclass(frozen=True)
+class LLMResponse:
+    """Exact assistant text and any token counts reported for a model call."""
+
+    text: str
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    total_tokens: int | None = None
+
+
+class LLMClient:
+    """Call a hosted provider or a native Ollama server with chat messages.
+
+    For ``backend="hosted"``, use LiteLLM's ``provider/model`` name and
+    pass the provider key, or leave the key to the provider's environment.
+    For ``backend="ollama"``, use the model name as installed in Ollama.
+    Ollama defaults to ``http://127.0.0.1:11434`` and accepts an optional
+    bearer key for authenticated servers. Supply a base URL to override the
+    corresponding provider endpoint, and a positive timeout in seconds.
+
+    Call the client with a list of ``{"role": ..., "content": ...}`` messages
+    to get nonblank assistant text. Use ``complete`` to also get token counts
+    and inspect empty replies. Request and response errors raise ``LLMError``.
+    """
+
+    def __init__(
+        self,
+        model: str,
+        *,
+        api_key: str | None = None,
+        backend: str = "hosted",
+        api_base: str | None = None,
+        timeout: float = 120,
+    ):
+        if not isinstance(model, str) or not model.strip():
+            raise ValueError("Provide an LLM model name.")
+        if backend not in ("hosted", "ollama"):
+            raise ValueError("The LLM backend must be hosted or ollama.")
+        model = model.strip()
+        if backend == "hosted":
+            provider, _, model_name = model.partition("/")
+            if not provider.strip() or not model_name.strip():
+                raise ValueError("Use a provider/model name for the hosted backend.")
+        if not isinstance(timeout, (float, int)) or not isfinite(timeout) or timeout <= 0:
+            raise ValueError("The LLM timeout must be a positive number of seconds.")
+        if api_key is not None and (
+            not isinstance(api_key, str) or not api_key.strip() or "\r" in api_key or "\n" in api_key
+        ):
+            raise ValueError("Set the API key to a nonblank, single-line string or omit it.")
+        if api_base is not None:
+            api_base = _normalize_base(api_base)
+
+        self.model = model
+        self.backend = backend
+        self.api_base = api_base
+        self.timeout = timeout
+        self._api_key = api_key
+
+    def __call__(self, messages: list[dict[str, str]]) -> str:
+        text = self.complete(messages).text
+        if not text.strip():
+            raise LLMError(_NO_TEXT)
+        return text
+
+    def complete(self, messages: list[dict[str, str]]) -> LLMResponse:
+        """Return exact assistant text and token usage from one model request.
+
+        An empty reply is retained. Token counts that the backend omits stay
+        ``None``. The total falls back to the sum when both counts are known.
+        """
+        if self.backend == "hosted":
+            return self._hosted(messages)
+        return self._ollama(messages)
+
+    def _hosted(self, messages: list[dict[str, str]]) -> LLMResponse:
+        try:
+            from litellm import completion
+        except ImportError:
+            raise LLMError("The hosted backend needs LiteLLM. Install the project requirements.") from None
+
+        wire_usage = None
+
+        def capture_usage(details: dict) -> None:
+            # LiteLLM can fill omitted OpenAI-format usage fields with zeros.
+            # The per-call callback exposes the original field presence.
+            nonlocal wire_usage
+            if details.get("log_event_type") != "post_api_call":
+                return
+            body = details.get("original_response")
+            if isinstance(body, str):
+                try:
+                    body = json.loads(body)
+                except ValueError:
+                    return
+            if (isinstance(body, Mapping) and body.get("object") == "chat.completion"
+                    and isinstance(body.get("choices"), list)):
+                raw_usage = body.get("usage")
+                wire_usage = {key: _token_count(_field(raw_usage, key))
+                              for key in ("prompt_tokens", "completion_tokens", "total_tokens")}
+
+        options = {
+            "model": self.model,
+            "messages": messages,
+            "timeout": self.timeout,
+            "stream": False,
+            "num_retries": 0,
+            "max_retries": 0,
+            "logger_fn": capture_usage,
+        }
+        if self._api_key is not None:
+            options["api_key"] = self._api_key
+        if self.api_base is not None:
+            options["api_base"] = self.api_base
+        try:
+            response = completion(**options)
+        except Exception as error:
+            status = getattr(error, "status_code", None)
+            if isinstance(error, TimeoutError) or "Timeout" in type(error).__name__:
+                raise LLMError("The hosted model request timed out. Check the provider or increase the timeout.") from None
+            raise LLMError(_request_error("Hosted model", status)) from None
+
+        try:
+            choice = _field(response, "choices")[0]
+        except (IndexError, KeyError, TypeError):
+            raise LLMError(_NO_TEXT) from None
+        usage = wire_usage if wire_usage is not None else _field(response, "usage")
+        return _model_response(
+            _field(choice, "message"),
+            _field(usage, "prompt_tokens"),
+            _field(usage, "completion_tokens"),
+            _field(usage, "total_tokens"),
+        )
+
+    def _ollama(self, messages: list[dict[str, str]]) -> LLMResponse:
+        base = self.api_base or "http://127.0.0.1:11434"
+        payload = {"model": self.model, "messages": messages, "stream": False}
+        request = Request(
+            f"{base}/api/chat",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        if self._api_key is not None:
+            request.add_unredirected_header("Authorization", f"Bearer {self._api_key}")
+        try:
+            with urlopen(request, timeout=self.timeout) as response:
+                payload = json.load(response)
+        except HTTPError as error:
+            error.close()
+            raise LLMError(_request_error("Ollama", error.code)) from None
+        except (OSError, HTTPException) as error:
+            cause = error.reason if isinstance(error, URLError) else error
+            if isinstance(cause, TimeoutError):
+                raise LLMError("The Ollama request timed out. Check the server or increase the timeout.") from None
+            raise LLMError("Could not reach Ollama. Check that it is running and the API base is correct.") from None
+        except (json.JSONDecodeError, UnicodeError):
+            raise LLMError("Ollama returned invalid JSON. Check that the API base points to an Ollama server.") from None
+
+        return _model_response(
+            _field(payload, "message"),
+            _field(payload, "prompt_eval_count"),
+            _field(payload, "eval_count"),
+            _field(payload, "total_tokens"),
+        )
+
+
+def _field(response, name, default=None):
+    if isinstance(response, Mapping):
+        return response.get(name, default)
+    return getattr(response, name, default)
+
+
+def _token_count(value) -> int | None:
+    return value if type(value) is int and value >= 0 else None
+
+
+def _model_response(message, input_tokens, output_tokens, total_tokens) -> LLMResponse:
+    content = _field(message, "content", _MISSING)
+    if content is None:
+        content = ""
+    if not isinstance(content, str):
+        raise LLMError(_NO_TEXT)
+
+    input_count = _token_count(input_tokens)
+    output_count = _token_count(output_tokens)
+    total_count = _token_count(total_tokens)
+    if total_count is None and input_count is not None and output_count is not None:
+        total_count = input_count + output_count
+    return LLMResponse(content, input_count, output_count, total_count)
+
+
+def _normalize_base(value: str) -> str:
+    error = "The API base must be an HTTP(S) URL without credentials, a query, or a fragment."
+    if not isinstance(value, str):
+        raise ValueError(error)
+    value = value.strip()
+    try:
+        parsed = urlsplit(value)
+        _ = parsed.port
+    except ValueError:
+        raise ValueError(error) from None
+    if (parsed.scheme not in ("http", "https") or not parsed.hostname or parsed.username is not None
+            or parsed.query or parsed.fragment or any(character.isspace() for character in value)):
+        raise ValueError(error)
+    return value.rstrip("/")
+
+
+def _request_error(source: str, status: int | None) -> str:
+    if status in (401, 403):
+        return f"{source} rejected authentication. Check your API key and model access."
+    if status == 404:
+        return f"{source} endpoint or model was not found. Check the model name and API base."
+    if status == 429:
+        return f"{source} rate limited the request. Check your quota or try again later."
+    if status in (408, 504):
+        return f"{source} request timed out. Check the endpoint or increase the timeout."
+    if isinstance(status, int):
+        return f"{source} returned HTTP {status}. Check the endpoint and model settings."
+    return f"{source} request failed. Check the model name, provider credentials, API base, and connectivity."

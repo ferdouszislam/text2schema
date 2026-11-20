@@ -1,0 +1,10 @@
+Generate a relational schema from the supplied attribute names and functional dependencies.
+Include every listed attribute in at least one relation. Use the exact supplied names
+and reuse the same name wherever the same attribute occurs. Keep the supplied dependencies
+fixed.
+
+Return only one declaration per line in the form Relation_Name(<u>Key_Attribute</u>, Other_Attribute).
+Use the literal <u> and </u> tags for each primary key column, including every column in a
+composite primary key. Choose keys supported by the supplied dependencies. Use unique table
+names and avoid the reserved sqlite_ prefix. If the input contains previous_schema and feedback,
+revise that schema to address the feedback and return the complete revised schema.

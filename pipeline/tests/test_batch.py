@@ -82,13 +82,14 @@ class BatchTests(unittest.TestCase):
                          {"id": 208, "question": second_spec})
         raw_extraction = f"  ```json\n{EXTRACTION}\n```\n"
         raw_schema = f"```text\n{VERIFIED_SCHEMA}\n```\n"
+        exhausted_schema = FAILING_SCHEMA.replace("Record(", "UpdatedRecord(")
         llm = ScriptedLLM(
             LLMResponse(raw_extraction, input_tokens=40, output_tokens=12, total_tokens=52),
             LLMResponse(FAILING_SCHEMA, input_tokens=56, output_tokens=8, total_tokens=64),
             LLMResponse(text=raw_schema, input_tokens=0, output_tokens=0, total_tokens=0),
             EXTRACTION,
             FAILING_SCHEMA,
-            LLMResponse(text=FAILING_SCHEMA, input_tokens=72, total_tokens=81),
+            LLMResponse(text=exhausted_schema, input_tokens=72, total_tokens=81),
         )
         report = run_batch(self.source, self.output, llm, max_iterations=2)
 
@@ -143,7 +144,15 @@ class BatchTests(unittest.TestCase):
 
         self.assertTrue(json.loads(rows[2]["verification"])["verified"])
         self.assertFalse(json.loads(rows[5]["verification"])["verified"])
-        self.assertFalse(json.loads(rows[5]["create_queries"] or "[]"))
+        for row_index, table in ((1, "Record"), (4, "Record"), (5, "UpdatedRecord")):
+            with self.subTest(row_index=row_index), closing(sqlite3.connect(":memory:")) as connection:
+                statements = json.loads(rows[row_index]["create_queries"])
+                self.assertEqual(len(statements), 1)
+                connection.executescript(statements[0])
+                columns = connection.execute(f'PRAGMA table_info("{table}")').fetchall()
+                self.assertEqual([(row[1], row[2], row[5]) for row in columns],
+                                 [("A", "INTEGER", 1), ("B", "INTEGER", 0), ("C", "TEXT", 0)])
+
         statements = json.loads(rows[2]["create_queries"])
         with closing(sqlite3.connect(":memory:")) as connection:
             connection.executescript("\n".join(statements))

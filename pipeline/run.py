@@ -102,28 +102,27 @@ def _extract(response):
         raise ExtractionError(f"Invalid LLM extraction. {error}") from None
 
 
-def _check_candidate(schema, dependencies, attribute_types):
-    """Return the verification, generated statements, and feedback for a candidate."""
+def _prepare_candidate(schema, attribute_types):
+    """Return DDL, schema validation feedback, and DDL generation feedback."""
     try:
         _, attributes = parse_relational_schema(schema)
     except ValueError as error:
-        return None, [], f"Invalid relational schema. {error}"
+        return [], f"Invalid relational schema. {error}", ""
 
     missing = sorted(attribute_types.keys() - attributes)
     unexpected = sorted(attributes - attribute_types.keys())
+    schema_feedback = ""
     if missing or unexpected:
-        feedback = f"Attribute coverage failed. Missing attributes: {missing}. Unexpected attributes: {unexpected}."
-        return None, [], feedback
+        schema_feedback = f"Attribute coverage failed. Missing attributes: {missing}. Unexpected attributes: {unexpected}."
+    if unexpected:
+        return [], schema_feedback, ""
 
-    verification = verify_schema(schema, dependencies)
-    if not verification["verified"]:
-        return verification, [], verification["feedback"]
-
+    candidate_types = {name: sql_type for name, sql_type in attribute_types.items() if name in attributes}
     try:
-        queries = generate_create_queries(schema, attribute_types)
+        queries = generate_create_queries(schema, candidate_types)
     except ValueError as error:
-        return verification, [], f"Cannot generate SQLite DDL for this schema. {error}"
-    return verification, queries, verification["feedback"]
+        return [], schema_feedback, f"Cannot generate SQLite DDL for this schema. {error}"
+    return queries, schema_feedback, ""
 
 
 def _emit(callback, stage, iteration, status, messages, response, *, started_at, **fields):
@@ -165,9 +164,10 @@ def run_pipeline(
 
     ``max_iterations`` is the positive number of schema proposals permitted,
     including the initial one. The returned JSON-serializable dictionary has
-    the extraction, each attempted schema and its feedback, the final schema,
-    verification status, and ``create_queries``. The statements are present
-    only if the candidate passes verification and SQLite DDL generation.
+    the extraction, each attempted schema with feedback and ``create_queries``,
+    and the final schema with its queries and outcome. The pipeline generates
+    SQLite DDL whenever the proposal and its available types allow it. A
+    successful outcome requires both DDL and passing verification.
     Supply custom instruction text with ``extraction_prompt`` or
     ``schema_prompt``. ``on_event``, if provided, receives a dictionary for
     extraction (iteration zero) and for each schema proposal, with status,
@@ -205,34 +205,42 @@ def run_pipeline(
         messages = _messages(schema_prompt, inputs)
         response = None
         schema = ""
+        queries = None
         _LOGGER.info("Starting schema attempt %d/%d", iteration, max_iterations)
         started_at = monotonic()
         try:
             response = _request(llm, messages)
             schema = _unwrap(response.text)
-            verification, queries, feedback = _check_candidate(schema, dependencies, types)
+            queries, feedback, ddl_feedback = _prepare_candidate(schema, types)
+            verification = None if feedback else verify_schema(schema, dependencies)
         except RuntimeError as error:
             _emit(on_event, "schema", iteration, "error", messages, response,
-                  started_at=started_at, relational_schema=schema, feedback=str(error))
+                  started_at=started_at, relational_schema=schema, feedback=str(error), create_queries=queries)
             raise
+        verified = bool(verification and verification["verified"] and queries)
+        if verification is not None and (not ddl_feedback or not verification["verified"]):
+            feedback = verification["feedback"]
+        if ddl_feedback:
+            feedback = f"{feedback}\n{ddl_feedback}".strip()
         attempt = {
             "iteration": iteration,
             "relational_schema": schema,
             "feedback": feedback,
             "verification": verification,
+            "create_queries": queries,
         }
         attempts.append(attempt)
         status = "exhausted" if iteration == max_iterations else "rejected"
-        if queries:
+        if verified:
             status = "verified"
         _emit(on_event, "schema", iteration, status, messages, response, started_at=started_at, relational_schema=schema,
               feedback=feedback, verification=verification, create_queries=queries)
-        if queries:
+        if verified:
             break
         inputs.update(previous_schema=schema, feedback=feedback)
 
     return {
-        "verified": bool(queries),
+        "verified": verified,
         "attribute_types": types,
         "functional_dependencies": list(dependencies),
         "attempts": attempts,

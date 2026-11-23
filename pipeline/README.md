@@ -1,6 +1,6 @@
 # Text-to-schema pipeline
 
-The pipeline reads database specifications from JSONL, extracts facts, and iterates on each proposed relational schema using verification feedback. It writes SQLite `CREATE TABLE` statements for verified schemas and records model prompts, responses, and token usage in two CSVs. [Pipeline explained](PIPELINE-EXPLAINED.md)
+The pipeline reads database specifications from JSONL, extracts facts, and revises proposed schemas using verification feedback. It generates SQLite `CREATE TABLE` statements for each proposal it can translate and records model prompts, responses, and token usage in two CSVs. [Pipeline explained](PIPELINE-EXPLAINED.md)
 
 ## Run the batch
 
@@ -63,7 +63,7 @@ Full runs save both CSVs under `pipeline/results/<model-name>/`, replacing chara
 
 For a model named `debug` in any capitalization, full runs start at suffix `-1` because `pipeline/results/debug/` holds debug runs.
 
-- `results.csv` records extraction at iteration `0`, schema proposals from iteration `1` onward, and any record-level errors. Schema rows include reported token counts, verification feedback, and SQL when the proposal passes.
+- `results.csv` records extraction at iteration `0`, schema proposals from iteration `1` onward, and any record-level errors. Schema rows include reported token counts, verification feedback, and any generated SQL in `create_queries`, including for rejected and exhausted proposals.
 - `extraction_results.csv` records extraction attempts, including the attribute names, SQLite types, FDs, and reported extraction token counts.
 
 Use `spec_id` and `input_line` to match rows across the reports. Both files record `prompt` as a JSON array of chat messages and `model_response` as raw text. See the detailed guide for field definitions and the Python API. [Pipeline explained](PIPELINE-EXPLAINED.md)

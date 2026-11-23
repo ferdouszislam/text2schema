@@ -2,7 +2,9 @@ from contextlib import closing
 import json
 import sqlite3
 import unittest
+from unittest.mock import patch
 
+from create_query_generator.create_query_generator import generate_create_queries
 from pipeline.llm import LLMResponse
 from pipeline.run import ExtractionError, run_pipeline
 from verifier.verify import verify_schema
@@ -82,7 +84,12 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(revised_proposal["feedback"], expected_verification["feedback"])
         self.assertTrue(successful_attempt["verification"]["verified"])
 
+        rejected_queries = generate_create_queries(FAILING_SCHEMA, ATTRIBUTE_TYPES)
+        self.assertEqual(first_attempt["create_queries"], rejected_queries)
+        self.assertEqual(events[1]["create_queries"], rejected_queries)
         queries = result["create_queries"]
+        self.assertEqual(successful_attempt["create_queries"], queries)
+        self.assertEqual(events[2]["create_queries"], queries)
         self.assertEqual(len(queries), 3)
         with closing(sqlite3.connect(":memory:")) as connection:
             connection.executescript("\n".join(queries))
@@ -104,6 +111,10 @@ class PipelineTests(unittest.TestCase):
         self.assertIsNone(extra_attempt["verification"])
         self.assertIn("Notes", missing_attempt["feedback"])
         self.assertIn("UnexpectedField", extra_attempt["feedback"])
+        self.assertEqual(missing_attempt["create_queries"], generate_create_queries(
+            missing, {"A": "INTEGER", "B": "INTEGER", "C": "TEXT"},
+        ))
+        self.assertEqual(extra_attempt["create_queries"], [])
         self.assertEqual(self.user_payload(llm.calls[2])["feedback"], missing_attempt["feedback"])
         self.assertEqual(self.user_payload(llm.calls[3])["feedback"], extra_attempt["feedback"])
 
@@ -115,22 +126,41 @@ class PipelineTests(unittest.TestCase):
         self.assertTrue(result["verified"])
         malformed_attempt, reserved_name_attempt, _ = result["attempts"]
         self.assertIsNone(malformed_attempt["verification"])
+        self.assertEqual(malformed_attempt["create_queries"], [])
+        self.assertTrue(reserved_name_attempt["verification"]["verified"])
+        self.assertEqual(reserved_name_attempt["create_queries"], [])
         self.assertIn("sqlite_Record", reserved_name_attempt["feedback"])
         self.assertEqual(self.user_payload(llm.calls[2])["feedback"], malformed_attempt["feedback"])
         self.assertEqual(
             self.user_payload(llm.calls[3])["feedback"], reserved_name_attempt["feedback"]
         )
 
-    def test_iteration_limit_counts_first_candidate_and_failure_returns_no_ddl(self):
+    def test_iteration_limit_counts_first_candidate_and_preserves_its_ddl(self):
         llm = ScriptedLLM(EXTRACTION, FAILING_SCHEMA)
-        result = run_pipeline(SPECIFICATION, llm, max_iterations=1)
+        events = []
+        result = run_pipeline(SPECIFICATION, llm, max_iterations=1, on_event=events.append)
 
         self.assertFalse(result["verified"])
-        self.assertEqual(result["create_queries"], [])
         self.assertEqual(len(llm.calls), 2)
         self.assertEqual(len(result["attempts"]), 1)
-        self.assertEqual(result["attempts"][0]["iteration"], 1)
+        attempt = result["attempts"][0]
+        self.assertEqual(attempt["iteration"], 1)
+        expected_queries = generate_create_queries(FAILING_SCHEMA, ATTRIBUTE_TYPES)
+        self.assertEqual(attempt["create_queries"], expected_queries)
+        self.assertEqual(result["create_queries"], expected_queries)
+        self.assertEqual(events[-1]["status"], "exhausted")
+        self.assertEqual(events[-1]["create_queries"], expected_queries)
         self.assertIn("2NF", result["feedback"])
+
+    def test_solver_error_event_keeps_generated_ddl(self):
+        llm = ScriptedLLM(EXTRACTION, VERIFIED_SCHEMA)
+        events = []
+        with patch("pipeline.run.verify_schema", side_effect=RuntimeError("Inconclusive solver result.")):
+            with self.assertRaisesRegex(RuntimeError, "Inconclusive solver result"):
+                run_pipeline(SPECIFICATION, llm, on_event=events.append)
+
+        self.assertEqual(events[-1]["status"], "error")
+        self.assertEqual(events[-1]["create_queries"], generate_create_queries(VERIFIED_SCHEMA, ATTRIBUTE_TYPES))
 
     def test_invalid_extraction_does_not_start_schema_generation(self):
         invalid_responses = (

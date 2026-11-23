@@ -12,12 +12,12 @@ Each selected record uses the configured model and retry limit. The launcher sav
 
 ## From specification to SQL
 
-The stages follow Figure 1 in the project proposal. [Project proposal](../formal_verification_guided_text2schema.pdf)
+The pipeline is based on the workflow in Figure 1 of the project proposal. [Project proposal](../formal_verification_guided_text2schema.pdf)
 
 1. The extraction prompt asks the model for one JSON object with `attribute_types` and `functional_dependencies`. `attribute_types` lists each attribute with its SQLite type. The pipeline derives the attribute list from those keys, including attributes absent from all functional dependencies (FDs). It validates the types and FD syntax before asking for a schema. The extraction runs once per specification. [Extraction prompt](prompts/extract_fds_attributes_and_types_prompt.txt)
 2. The schema prompt asks the model to construct relations over the extracted attributes using the FDs. The user message carries the original specification, attribute names, and FDs. Revisions also receive the previous proposal and its latest feedback. The extracted names and FDs stay fixed across attempts. The response uses one relation declaration per line and `<u>` tags around every column of a declared primary key. [Schema prompt](prompts/generate_relational_schema_prompt.txt)
-3. The pipeline parses the candidate and checks that it contains exactly the extracted attributes. The verifier then checks 2NF, 3NF, lossless decomposition, and dependency preservation under the extracted FDs. When a proposal is rejected, its feedback describes the reason for the next attempt. [Verifier guide](../verifier/README.md)
-4. After verification passes, the SQL generator uses the extracted types and the proposed relations to produce SQLite `CREATE TABLE` statements. If a candidate passes verification and SQL generation, processing moves to the next record. The default `PIPELINE_MAX_ITERATIONS=3` includes the first proposal. When it reaches the limit without a passing schema, the record is marked `exhausted` and contains no SQL. [CREATE query generator guide](../create_query_generator/README.md)
+3. The pipeline parses each proposal and uses the extracted types to generate SQLite `CREATE TABLE` statements for its relations. It can generate SQL for a proposal that omits an expected attribute if all the columns it declares have extracted types. Malformed proposals, attributes without extracted types, and invalid SQLite identifiers yield feedback and an empty query list. [CREATE query generator guide](../create_query_generator/README.md)
+4. For proposals that contain exactly the extracted attributes, the verifier checks 2NF, 3NF, lossless decomposition, and dependency preservation under the extracted FDs. When verification and SQL generation succeed, processing moves to the next record. A rejected proposal supplies feedback to the next attempt. The default `PIPELINE_MAX_ITERATIONS=3` includes the first proposal. If all allowed proposals are rejected, the last one is marked `exhausted` and its generated SQL is recorded when available. [Verifier guide](../verifier/README.md)
 
 Malformed input, invalid extraction, and model call failures are recorded against the affected record. The batch continues processing subsequent records. The formal checks apply to the extracted attributes and FDs.
 
@@ -29,7 +29,7 @@ Both reports follow processing order. Full batches process records in input orde
 
 ### Batch results
 
-In `results.csv`, each valid record has an `extraction` row with iteration `0`, followed by one `schema` row per proposal starting at iteration `1`. Malformed input records have stage `input` and a blank iteration. Statuses include `extracted`, `rejected`, `exhausted`, `verified`, and `error`. The `feedback` field gives the reason for a rejection or error. Only a verified row includes generated SQL. Token counts in this report apply to schema requests.
+In `results.csv`, each valid record has an `extraction` row with iteration `0`, followed by one `schema` row per proposal starting at iteration `1`. Malformed input records have stage `input` and a blank iteration. Statuses include `extracted`, `rejected`, `exhausted`, `verified`, and `error`. The `feedback` field gives the reason for a rejection or error. The `create_queries` field records any statements generated for that proposal, including when the proposal is rejected or the verifier raises an error. Token counts in this report apply to schema requests.
 
 ```text
 spec_id,input_line,stage,iteration,status,database_specification,prompt,model_response,input_tokens,output_tokens,total_tokens,attributes,attribute_types,functional_dependencies,relational_schema,feedback,verification,create_queries
@@ -57,10 +57,11 @@ spec = "Each employee has a unique integer ID and a full name."
 client = LLMClient("qwen3:8b", backend="ollama")
 result = run_pipeline(spec, client, max_iterations=3)
 
-if result["verified"]:
-    print("\n\n".join(result["create_queries"]))
-else:
-    print(result["feedback"])
+for attempt in result["attempts"]:
+    print(f"Iteration {attempt['iteration']}")
+    print(attempt["feedback"])
+    for query in attempt["create_queries"]:
+        print(query)
 ```
 
-The result includes `verified`, `attribute_types`, `functional_dependencies`, `relational_schema`, `create_queries`, and `feedback`. Each entry in `attempts` records the iteration, proposed schema, feedback, and verification report. The report is `None` when parsing or attribute coverage rejects a proposal before the formal checks. Invalid extraction raises `ExtractionError` before schema generation starts.
+Each entry in `attempts` records the iteration, proposed schema, feedback, verification report, and `create_queries` list. The top-level result includes the extracted `attribute_types` and `functional_dependencies`, along with the final proposal's `relational_schema`, `create_queries`, and `feedback`. The top-level `verified` is true when the final proposal passes verification and produces SQL. The verification report is `None` when parsing or attribute coverage rejects a proposal before the formal checks. Invalid extraction raises `ExtractionError` before schema generation starts.

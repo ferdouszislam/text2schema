@@ -1,7 +1,9 @@
 """Run the JSONL-to-CSV pipeline. Omitted model options use values from .env."""
 
 import argparse
+from contextlib import suppress
 from pathlib import Path
+import re
 import sys
 
 from dotenv import dotenv_values
@@ -27,6 +29,25 @@ def _read_prompt(path: Path) -> str:
     return prompt
 
 
+def _create_run_directory(model: str, *, debug: bool) -> Path:
+    results_root = _ROOT / "pipeline" / "results"
+    if debug:
+        results_root /= "debug"
+    results_root.mkdir(parents=True, exist_ok=True)
+    model_name = re.sub(r"[^A-Za-z0-9._-]", "-", model).strip(".") or "model"
+    # Reserve the debug parent even before the first debug run.
+    suffix = 1 if not debug and model_name.lower() == "debug" else 0
+    while True:
+        name = model_name if suffix == 0 else f"{model_name}-{suffix}"
+        directory = results_root / name
+        try:
+            directory.mkdir()
+        except FileExistsError:
+            suffix += 1
+        else:
+            return directory
+
+
 def main(
     config_path: str | Path | None = None,
     *,
@@ -35,6 +56,7 @@ def main(
     """Run with root-relative paths and return a process exit status."""
     settings_path = _ROOT / ".env" if config_path is None else Path(config_path)
     api_key = None
+    run_directory = None
     try:
         with settings_path.open(encoding="utf-8") as config:
             settings = dotenv_values(stream=config, interpolate=False)
@@ -47,16 +69,6 @@ def main(
         debug = debug_setting == "true"
 
         input_jsonl = _ROOT / _required(settings, "PIPELINE_INPUT_JSONL")
-        output_csv = _ROOT / _required(settings, "PIPELINE_OUTPUT_CSV")
-        extraction_csv_setting = (settings.get("PIPELINE_EXTRACTION_CSV") or "").strip()
-        extraction_csv = (_ROOT / extraction_csv_setting if extraction_csv_setting
-                          else default_extraction_csv(output_csv))
-        if debug:
-            full_report_paths = {output_csv.resolve(), extraction_csv.resolve()}
-            output_csv = output_csv.with_name(f"debug_{output_csv.name}")
-            extraction_csv = extraction_csv.with_name(f"debug_{extraction_csv.name}")
-            if {output_csv.resolve(), extraction_csv.resolve()} & full_report_paths:
-                raise ValueError("Debug CSV paths must be separate from the full-run CSV paths.")
         specification_field = _required(settings, "PIPELINE_SPEC_FIELD")
         id_field = _required(settings, "PIPELINE_ID_FIELD")
         backend = _required(settings, "PIPELINE_BACKEND")
@@ -77,12 +89,12 @@ def main(
 
         extraction_path = _ROOT / _required(settings, "PIPELINE_EXTRACTION_PROMPT")
         schema_path = _ROOT / _required(settings, "PIPELINE_SCHEMA_PROMPT")
-        protected_paths = {settings_path.resolve(), extraction_path.resolve(), schema_path.resolve()}
-        if {output_csv.resolve(), extraction_csv.resolve()} & protected_paths:
-            raise ValueError("The output CSVs must be separate from the .env and prompt files.")
         extraction_prompt = _read_prompt(extraction_path)
         schema_prompt = _read_prompt(schema_path)
         llm = LLMClient(model, backend=backend, api_key=api_key, api_base=api_base, timeout=timeout)
+        run_directory = _create_run_directory(model, debug=debug)
+        output_csv = run_directory / "results.csv"
+        extraction_csv = default_extraction_csv(output_csv)
         results = run_batch(
             input_jsonl,
             output_csv,
@@ -96,6 +108,9 @@ def main(
             schema_prompt=schema_prompt,
         )
     except (OSError, RuntimeError, ValueError) as error:
+        if run_directory is not None:
+            with suppress(OSError):
+                run_directory.rmdir()
         message = str(error)
         if api_key:
             message = message.replace(api_key, "[redacted]")
@@ -106,8 +121,8 @@ def main(
         f"Processed {results['records']} records with {results['verified']} verified, "
         f"{results['exhausted']} exhausted, and {results['errors']} errors."
     )
-    if debug:
-        print(f"Debug reports\n  {output_csv}\n  {extraction_csv}")
+    report_title = "Debug reports" if debug else "Reports"
+    print(f"{report_title}\n  {output_csv}\n  {extraction_csv}")
     return 0 if results["records"] == results["verified"] else 1
 
 

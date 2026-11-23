@@ -1,6 +1,6 @@
 # How the text-to-schema pipeline works
 
-`run_pipeline.py` reads its input path, prompt paths, output paths, and default model settings from the root `.env`. Run it with `python run_pipeline.py` and add terminal flags for any model settings you want to override. The configured input is UTF-8 JSONL, with one database specification per record. By default, the `question` field supplies the specification and `id` supplies the report ID. When the ID is missing, the ID uses the physical input line number, such as `line-3`. [Batch setup](README.md)
+`run_pipeline.py` reads its input path, prompt paths, and default model settings from the root `.env`. Run it with `python run_pipeline.py` and add terminal flags for any model settings you want to override. The configured input is UTF-8 JSONL, with one database specification per record. By default, the `question` field supplies the specification and `id` supplies the report ID. When the ID is missing, the ID uses the physical input line number, such as `line-3`. [Batch setup](README.md)
 
 ## Debug mode
 
@@ -8,7 +8,7 @@ Set `debug=true` in `.env` to process one specification. The default `debug=fals
 
 The launcher scans the input and counts whitespace-separated words in each valid specification using `len(specification.split())`. It uses the field named by `PIPELINE_SPEC_FIELD` and skips input rows that lack a valid nonblank specification string. The earliest input row wins a tie. If the input has no valid specifications, the launcher reports an error.
 
-The selected record uses the configured model and retry limit. Each debug report goes beside its configured report with `debug_` before the filename, and the launcher prints both debug output paths.
+The selected record uses the configured model and retry limit. The launcher saves both CSVs in `pipeline/results/debug/<model-name>/`, adding `-1`, `-2`, and later suffixes to the model folder name as needed for repeat debug runs.
 
 ## From specification to SQL
 
@@ -23,11 +23,13 @@ Malformed input, invalid extraction, and model call failures are recorded agains
 
 ## CSV reports
 
+The launcher writes `results.csv` and `extraction_results.csv` into a new directory based on the selected model. For example, full runs with `openai/gpt-4o-mini` use `pipeline/results/openai-gpt-4o-mini/`, followed by directories with `-1`, `-2`, and later suffixes as needed. [Results locations](README.md#read-the-results)
+
 Both reports follow input order. Use `spec_id` and `input_line` together to identify the source record, including when IDs repeat. In either report, `prompt` is a JSON array containing the exact system and user messages passed to the model client. `model_response` holds the original assistant text, including formatting such as Markdown fences if present. Unavailable values leave empty cells.
 
 ### Batch results
 
-`PIPELINE_OUTPUT_CSV` defaults to `pipeline/results.csv`. Each valid record has an `extraction` row with iteration `0`, followed by one `schema` row per proposal starting at iteration `1`. Malformed input records have stage `input` and a blank iteration. Statuses include `extracted`, `rejected`, `exhausted`, `verified`, and `error`. The `feedback` field gives the reason for a rejection or error. Only a verified row includes generated SQL. Token counts in this report apply to schema requests.
+In `results.csv`, each valid record has an `extraction` row with iteration `0`, followed by one `schema` row per proposal starting at iteration `1`. Malformed input records have stage `input` and a blank iteration. Statuses include `extracted`, `rejected`, `exhausted`, `verified`, and `error`. The `feedback` field gives the reason for a rejection or error. Only a verified row includes generated SQL. Token counts in this report apply to schema requests.
 
 ```text
 spec_id,input_line,stage,iteration,status,database_specification,prompt,model_response,input_tokens,output_tokens,total_tokens,attributes,attribute_types,functional_dependencies,relational_schema,feedback,verification,create_queries
@@ -35,7 +37,7 @@ spec_id,input_line,stage,iteration,status,database_specification,prompt,model_re
 
 ### Extraction results
 
-`PIPELINE_EXTRACTION_CSV` defaults to `pipeline/extraction_results.csv` with the default batch results path. If the setting is omitted, the extraction CSV goes beside the batch results and adds `extraction_` before the results filename. It records one row for each extraction attempt, including failed attempts. Each row can contain the source specification, chat messages, assistant text, token counts, and the extracted `attributes`, `attribute_types`, and `functional_dependencies`. The `status` and `feedback` fields describe the extraction outcome.
+`extraction_results.csv` records one row for each extraction attempt, including failed attempts. Each row can contain the source specification, chat messages, assistant text, token counts, and the extracted `attributes`, `attribute_types`, and `functional_dependencies`. The `status` and `feedback` fields describe the extraction outcome.
 
 ```text
 spec_id,input_line,status,database_specification,prompt,model_response,input_tokens,output_tokens,total_tokens,attributes,attribute_types,functional_dependencies,feedback

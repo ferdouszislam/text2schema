@@ -22,15 +22,15 @@ VERIFIED_SCHEMA = "Mapping(<u>A</u>, B)\nDescription(<u>B</u>, C)"
 
 class LauncherTests(unittest.TestCase):
     def setUp(self):
-        self.directory = Path(self.enterContext(TemporaryDirectory()))
+        self.directory = Path(self.enterContext(TemporaryDirectory())).resolve()
         self.config = self.directory / ".env"
         self.input = self.directory / "specs.jsonl"
-        self.results = self.directory / "reports" / "results.csv"
-        self.extraction = self.directory / "facts" / "extraction.csv"
-        self.debug_results = self.results.with_name("debug_results.csv")
-        self.debug_extraction = self.extraction.with_name("debug_extraction.csv")
-        self.results.parent.mkdir()
-        self.extraction.parent.mkdir()
+        self.report_root = self.directory / "pipeline" / "results"
+        self.report_dir = self.report_root / "test-model"
+        self.debug_report_root = self.report_root / "debug"
+        self.debug_report_dir = self.debug_report_root / "test-model"
+        self.results = self.report_dir / "results.csv"
+        self.extraction = self.report_dir / "extraction_results.csv"
         self.extraction_prompt = self.directory / "facts.txt"
         self.schema_prompt = self.directory / "schema.txt"
         self.extraction_prompt.write_text("Extract the database facts.\n", encoding="utf-8")
@@ -45,11 +45,9 @@ class LauncherTests(unittest.TestCase):
         lines = [record if isinstance(record, str) else json.dumps(record) for record in records]
         self.input.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-    def configure(self, *, max_iterations=2, extraction=None, debug=None):
+    def configure(self, *, max_iterations=2, debug=None):
         settings = {
             "PIPELINE_INPUT_JSONL": self.input.name,
-            "PIPELINE_OUTPUT_CSV": self.results.relative_to(self.directory),
-            "PIPELINE_EXTRACTION_CSV": (extraction or self.extraction).relative_to(self.directory),
             "PIPELINE_SPEC_FIELD": "requirements",
             "PIPELINE_ID_FIELD": "case",
             "PIPELINE_BACKEND": "ollama",
@@ -90,6 +88,7 @@ class LauncherTests(unittest.TestCase):
         )
         existing_results = b"prior batch results\n"
         existing_extraction = b"prior extraction results\n"
+        self.report_dir.mkdir(parents=True)
         self.results.write_bytes(existing_results)
         self.extraction.write_bytes(existing_extraction)
 
@@ -104,7 +103,7 @@ class LauncherTests(unittest.TestCase):
 
         self.assertEqual(exited.exception.code, 0)
         self.assertEqual(llm.call_count, 3)
-        rows = self.read_csv(self.debug_results)
+        rows = self.read_csv(self.debug_report_dir / self.results.name)
         self.assertEqual([(row["spec_id"], row["input_line"], row["status"]) for row in rows], [
             ("winner", "6", "extracted"), ("winner", "6", "rejected"), ("winner", "6", "verified"),
         ])
@@ -112,16 +111,18 @@ class LauncherTests(unittest.TestCase):
         self.assertEqual(extraction_payload["database_specification"], longest_specification)
         retry_messages = llm.call_args_list[-1].args[0]
         self.assertIn("3NF", json.loads(retry_messages[1]["content"])["feedback"])
-        extraction_rows = self.read_csv(self.debug_extraction)
+        extraction_rows = self.read_csv(self.debug_report_dir / self.extraction.name)
         self.assertEqual([(row["spec_id"], row["input_line"]) for row in extraction_rows],
                          [("winner", "6")])
-        self.assertIn(self.debug_results.name, stdout.getvalue())
-        self.assertIn(self.debug_extraction.name, stdout.getvalue())
+        self.assertIn(str(self.debug_report_dir), stdout.getvalue())
         self.assertEqual(self.results.read_bytes(), existing_results)
         self.assertEqual(self.extraction.read_bytes(), existing_extraction)
 
     def test_debug_obeys_the_configured_proposal_limit(self):
         self.configure(max_iterations=1, debug="true")
+        self.debug_report_dir.mkdir(parents=True)
+        previous_results = self.debug_report_dir / self.results.name
+        previous_results.write_bytes(b"prior debug results\n")
         llm = Mock(side_effect=[EXTRACTION, FAILING_SCHEMA])
         with (patch.object(launcher, "_ROOT", self.directory),
               patch.object(launcher, "LLMClient", return_value=llm), redirect_stdout(StringIO())):
@@ -129,12 +130,15 @@ class LauncherTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 1)
         self.assertEqual(llm.call_count, 2)
-        self.assertEqual([row["status"] for row in self.read_csv(self.debug_results)],
+        debug_dir = self.debug_report_root / "test-model-1"
+        self.assertEqual([row["status"] for row in self.read_csv(debug_dir / self.results.name)],
                          ["extracted", "exhausted"])
+        self.assertTrue((debug_dir / self.extraction.name).is_file())
+        self.assertEqual(previous_results.read_bytes(), b"prior debug results\n")
 
-    def test_normal_launcher_processes_every_record_with_configured_reports(self):
-        for debug in (None, "FaLsE"):
-            with self.subTest(debug=debug):
+    def test_normal_launcher_processes_every_record_in_numbered_run_directories(self):
+        for debug, folder in ((None, "test-model"), ("FaLsE", "test-model-1"), ("false", "test-model-2")):
+            with self.subTest(debug=debug, folder=folder):
                 self.configure(debug=debug)
                 llm = Mock(side_effect=[EXTRACTION, VERIFIED_SCHEMA, EXTRACTION, VERIFIED_SCHEMA])
                 with (patch.object(launcher, "_ROOT", self.directory),
@@ -144,29 +148,42 @@ class LauncherTests(unittest.TestCase):
 
                 self.assertEqual(exit_code, 0)
                 self.assertEqual(llm.call_count, 4)
-                self.assertEqual([row["spec_id"] for row in self.read_csv(self.results)],
+                report_dir = self.report_root / folder
+                self.assertEqual([row["spec_id"] for row in self.read_csv(report_dir / self.results.name)],
                                  ["first", "first", "second", "second"])
-                self.assertEqual([row["spec_id"] for row in self.read_csv(self.extraction)],
+                self.assertEqual([row["spec_id"] for row in self.read_csv(report_dir / self.extraction.name)],
                                  ["first", "second"])
-                self.assertFalse(self.debug_results.exists())
-                self.assertFalse(self.debug_extraction.exists())
 
-    def test_debug_cannot_overwrite_configured_full_extraction_report(self):
-        self.configure(extraction=self.debug_results, debug="true")
+    def test_debug_parent_is_reserved_for_case_insensitive_model_names(self):
+        with patch.object(launcher, "_ROOT", self.directory):
+            full_run = launcher._create_run_directory("Debug", debug=False)
+            debug_run = launcher._create_run_directory("Debug", debug=True)
+
+        self.assertEqual(full_run, self.report_root / "Debug-1")
+        self.assertEqual(debug_run, self.debug_report_root / "Debug")
+
+    def test_legacy_output_settings_do_not_change_where_reports_are_written(self):
+        self.configure(debug="true")
+        legacy_results = self.directory / "legacy_results.csv"
+        legacy_extraction = self.directory / "legacy_extraction.csv"
+        with self.config.open("a", encoding="utf-8") as config:
+            config.write(f"PIPELINE_OUTPUT_CSV={legacy_results.name}\n")
+            config.write(f"PIPELINE_EXTRACTION_CSV={legacy_extraction.name}\n")
         existing_results = b"prior batch results\n"
         existing_extraction = b"prior extraction results\n"
-        self.results.write_bytes(existing_results)
-        self.debug_results.write_bytes(existing_extraction)
+        legacy_results.write_bytes(existing_results)
+        legacy_extraction.write_bytes(existing_extraction)
         llm = Mock(side_effect=[EXTRACTION, VERIFIED_SCHEMA])
         with (patch.object(launcher, "_ROOT", self.directory),
               patch.object(launcher, "LLMClient", return_value=llm),
-              redirect_stderr(StringIO())):
+              redirect_stdout(StringIO())):
             exit_code = launcher.main()
 
-        self.assertEqual(exit_code, 2)
-        llm.assert_not_called()
-        self.assertEqual(self.results.read_bytes(), existing_results)
-        self.assertEqual(self.debug_results.read_bytes(), existing_extraction)
+        self.assertEqual(exit_code, 0)
+        self.assertTrue((self.debug_report_dir / self.results.name).is_file())
+        self.assertTrue((self.debug_report_dir / self.extraction.name).is_file())
+        self.assertEqual(legacy_results.read_bytes(), existing_results)
+        self.assertEqual(legacy_extraction.read_bytes(), existing_extraction)
 
     def test_debug_reports_setup_error_without_a_valid_specification(self):
         self.configure(debug="true")
@@ -177,8 +194,7 @@ class LauncherTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 2)
         model.return_value.assert_not_called()
-        self.assertFalse(self.debug_results.exists())
-        self.assertFalse(self.debug_extraction.exists())
+        self.assertFalse(self.debug_report_dir.exists())
 
     def test_invalid_debug_flag_fails_before_model_setup(self):
         self.configure(debug="yes")
@@ -196,22 +212,25 @@ class LauncherTests(unittest.TestCase):
         script = self.copy_launcher()
         cases = [
             (
-                ["--model", "other-local-model"],
-                ("other-local-model", "ollama", "file-key", "http://file.example", 12.0, 2),
+                ["--model", "other-local-model:latest"],
+                ("other-local-model:latest", "ollama", "file-key", "http://file.example", 12.0, 2),
+                "other-local-model-latest",
             ),
             (
                 ["--backend", "hosted", "--model", "openai/test-model", "--api-key", "cli-key",
                  "--api-base", "https://cli.example/v1", "--timeout-seconds", "4.5",
                  "--max-iterations", "5"],
                 ("openai/test-model", "hosted", "cli-key", "https://cli.example/v1", 4.5, 5),
+                "openai-test-model",
             ),
             (
                 ["--api-key", "", "--api-base", ""],
                 ("test-model", "ollama", None, None, 12.0, 2),
+                "test-model",
             ),
         ]
         batch_results = {"records": 1, "verified": 1, "exhausted": 0, "errors": 0}
-        for args, (model, backend, api_key, api_base, timeout, max_iterations) in cases:
+        for args, (model, backend, api_key, api_base, timeout, max_iterations), folder in cases:
             with (self.subTest(args=args), patch("pipeline.llm.LLMClient") as client,
                   patch("pipeline.batch.run_batch", return_value=batch_results) as batch,
                   patch.object(sys, "argv", [str(script), *args]), redirect_stdout(StringIO())):
@@ -222,6 +241,9 @@ class LauncherTests(unittest.TestCase):
                 client.assert_called_once_with(
                     model, backend=backend, api_key=api_key, api_base=api_base, timeout=timeout,
                 )
+                report_dir = self.report_root / folder
+                self.assertEqual(batch.call_args.args[1], report_dir / self.results.name)
+                self.assertEqual(batch.call_args.kwargs["extraction_csv"], report_dir / self.extraction.name)
                 self.assertEqual(batch.call_args.kwargs["max_iterations"], max_iterations)
 
     def test_removed_dry_run_argument_is_rejected(self):
@@ -234,8 +256,7 @@ class LauncherTests(unittest.TestCase):
 
         self.assertEqual(exited.exception.code, 2)
         model.assert_not_called()
-        self.assertFalse(self.debug_results.exists())
-        self.assertFalse(self.debug_extraction.exists())
+        self.assertFalse(self.report_root.exists())
 
 
 if __name__ == "__main__":

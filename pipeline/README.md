@@ -30,7 +30,7 @@ Set `debug=true` in the root `.env` and run the same command.
 python run_pipeline.py
 ```
 
-Debug mode runs the longest valid specification by word count, using the configured model and retry limit. It adds `debug_` before each configured CSV filename and prints both paths. The default debug reports are `pipeline/debug_results.csv` and `pipeline/debug_extraction_results.csv`. [Debug mode details](PIPELINE-EXPLAINED.md#debug-mode)
+Debug mode runs the longest valid specification by word count, using the configured model and retry limit. It saves both CSVs under `pipeline/results/debug/<model-name>/`. [Debug mode details](PIPELINE-EXPLAINED.md#debug-mode)
 
 The input is UTF-8 JSONL with one JSON object per line. The default fields match the cleaned RSchema records. `question` holds the specification and `id` identifies the record in the results.
 
@@ -42,7 +42,6 @@ The input is UTF-8 JSONL with one JSON object per line. The default fields match
 | --- | --- | --- |
 | `debug` | | Use `false` for the full batch or `true` to run the longest valid specification. Defaults to `false`. |
 | `PIPELINE_INPUT_JSONL` | | Input dataset. |
-| `PIPELINE_OUTPUT_CSV`, `PIPELINE_EXTRACTION_CSV` | | Batch and extraction reports. Defaults are `pipeline/results.csv` and `pipeline/extraction_results.csv`. |
 | `PIPELINE_SPEC_FIELD`, `PIPELINE_ID_FIELD` | | Keys for the specification and record ID. The defaults are `question` and `id`. |
 | `PIPELINE_BACKEND` | `--backend` | Select `ollama` or `hosted`. |
 | `PIPELINE_MODEL` | `--model` | Set an installed Ollama model tag or a LiteLLM `provider/model` name. |
@@ -60,7 +59,11 @@ Edit the selected prompt files to change the model instructions. The pipeline fi
 
 ## Read the results
 
-- `pipeline/results.csv` records extraction at iteration `0`, schema proposals from iteration `1` onward, and any record-level errors. Schema rows include reported token counts, verification feedback, and SQL when the proposal passes.
-- `pipeline/extraction_results.csv` records extraction attempts, including the attribute names, SQLite types, FDs, and reported extraction token counts.
+Full runs save both CSVs under `pipeline/results/<model-name>/`, replacing characters such as `/` and `:` in the selected model name with hyphens. For example, `qwen3:8b` first uses `pipeline/results/qwen3-8b/`. If that folder exists, the launcher tries `pipeline/results/qwen3-8b-1/`, `pipeline/results/qwen3-8b-2/`, and so on until it finds an unused name. Debug runs use their own numbered folders under `pipeline/results/debug/`.
+
+For a model named `debug` in any capitalization, full runs start at suffix `-1` because `pipeline/results/debug/` holds debug runs.
+
+- `results.csv` records extraction at iteration `0`, schema proposals from iteration `1` onward, and any record-level errors. Schema rows include reported token counts, verification feedback, and SQL when the proposal passes.
+- `extraction_results.csv` records extraction attempts, including the attribute names, SQLite types, FDs, and reported extraction token counts.
 
 Use `spec_id` and `input_line` to match rows across the reports. Both files record `prompt` as a JSON array of chat messages and `model_response` as raw text. See the detailed guide for field definitions and the Python API. [Pipeline explained](PIPELINE-EXPLAINED.md)

@@ -20,6 +20,31 @@ class VerificationTests(unittest.TestCase):
                 self.assertEqual(check["passed"], passed)
                 self.assertEqual(bool(check["violations"]), not passed)
 
+    def assert_example_joins(self, witness, relations, source_rows, targets, join_order):
+        tables = witness["example_tables"]
+        expected_tables = {}
+        for name, columns in relations.items():
+            projection = {tuple(row[column] for column in columns) for row in source_rows}
+            expected_tables[name] = [dict(zip(columns, values)) for values in sorted(projection)]
+        self.assertEqual(tables, expected_tables)
+
+        traces = witness["join_traces"]
+        self.assertEqual(len(traces), len(targets))
+        for trace, target in zip(traces, targets):
+            self.assertEqual([step["relation"] for step in trace], join_order)
+            joined = {}
+            for step in trace:
+                table = tables[step["relation"]]
+                row_number = step["row_number"]
+                self.assertGreaterEqual(row_number, 1)
+                self.assertLessEqual(row_number, len(table))
+                row = table[row_number - 1]
+                shared = {column: joined[column] for column in joined.keys() & row.keys()}
+                self.assertEqual(step["join_values"], shared)
+                self.assertTrue(all(row[column] == value for column, value in shared.items()))
+                joined.update(row)
+            self.assertEqual(joined, target)
+
     def test_course_example_preserves_shared_logical_attributes(self):
         schema = """
         Student(<u>Student_Id</u>, Student_Name, Student_DOB)
@@ -42,6 +67,19 @@ class VerificationTests(unittest.TestCase):
         dependencies = ["[Student_Id] -> [Student_Name]", "[Course_Id] -> [Course_Name]"]
         result = verify_schema(schema, dependencies)
         self.assert_outcomes(result, second=True, third=True, lossless=False, preserved=True)
+        witness, = result["checks"]["lossless_decomposition"]["violations"]
+        self.assertEqual(witness["join_attributes"], {})
+        self.assertEqual(witness["spurious_join_pairs"], [])
+        self.assertIn("Cartesian product", result["feedback"])
+        self.assert_example_joins(
+            witness,
+            {"Student": ("Student_Id", "Student_Name"), "Course": ("Course_Id", "Course_Name")},
+            list(witness["witness_rows"].values()), [witness["spurious_tuple"]],
+            ["Student", "Course"],
+        )
+        step = witness["join_traces"][0][1]
+        self.assertIn(f"Combine with Course row {step['row_number']} by Cartesian product.",
+                      witness["message"])
 
     def test_partial_dependency_on_alternate_candidate_key(self):
         schema = "R(<u>A</u>, <u>B</u>, C, Dependent_Value)"
@@ -92,8 +130,62 @@ class VerificationTests(unittest.TestCase):
         target = witness["spurious_tuple"]
         rows = witness["witness_rows"]
         self.assertNotIn(target, rows.values())
+        self.assertEqual(witness["join_attributes"], {"B": ["R", "S"]})
+        self.assertEqual(witness["spurious_join_pairs"], [
+            {"relations": ["R", "S"], "join_values": {"B": target["B"]}},
+        ])
+        self.assertIn(f"Joining R and S on B={target['B']} produces a spurious combination",
+                      result["feedback"])
+        self.assert_example_joins(witness, {"R": ("A", "B"), "S": ("B", "C")},
+                                  list(rows.values()), [target], ["R", "S"])
+        second_step = witness["join_traces"][0][1]
+        self.assertIn("Source data before decomposition", witness["message"])
+        self.assertIn(f"Source row 1: {rows['R']}", witness["message"])
+        self.assertIn(f"Source row 2: {rows['S']}", witness["message"])
+        self.assertNotIn("Row for ", witness["message"])
+        self.assertIn("Example table rows before the join", witness["message"])
+        self.assertIn("Join trace for", witness["message"])
+        self.assertIn(f"Join S row {second_step['row_number']} on B=0.", witness["message"])
         for name, attributes in (("R", ("A", "B")), ("S", ("B", "C"))):
-            self.assertTrue(all(rows[name][attribute] == target[attribute] for attribute in attributes))
+            self.assertTrue(all(rows[name][attribute] == target[attribute]
+                                for attribute in attributes))
+
+    def test_lossy_join_explains_composite_match_and_omits_existing_pair(self):
+        schema = """
+        Summary(A, B)
+        Detail(B, C)
+        R(A, B, C)
+        S(B, C, D)
+        """
+        result = verify_schema(schema, [])
+        self.assert_outcomes(result, second=True, third=True, lossless=False, preserved=True)
+        witness, = result["checks"]["lossless_decomposition"]["violations"]
+        target = witness["spurious_tuple"]
+        self.assertEqual(witness["join_attributes"], {
+            "A": ["Summary", "R"], "B": ["Summary", "Detail", "R", "S"], "C": ["Detail", "R", "S"],
+        })
+        self.assertEqual(witness["spurious_join_pairs"], [
+            {"relations": ["Summary", "S"], "join_values": {"B": target["B"]}},
+            {"relations": ["R", "S"], "join_values": {"B": target["B"], "C": target["C"]}},
+        ])
+        self.assertIn(f"Joining R and S on B={target['B']}, C={target['C']}", result["feedback"])
+        # Summary and Detail overlap, but R's source row already combines their values.
+        self.assertTrue(all(witness["witness_rows"]["R"][column] == target[column]
+                            for column in ("A", "B", "C")))
+        self.assert_example_joins(
+            witness, {"Summary": ("A", "B"), "Detail": ("B", "C"),
+                      "R": ("A", "B", "C"), "S": ("B", "C", "D")},
+            list(witness["witness_rows"].values()), [target], ["Summary", "Detail", "R", "S"],
+        )
+
+    def test_lossy_join_trace_prefers_a_relation_with_shared_columns(self):
+        result = verify_schema("R(A, B)\nS(C, D)\nT(B, C)", [])
+        self.assert_outcomes(result, second=True, third=True, lossless=False, preserved=True)
+        witness, = result["checks"]["lossless_decomposition"]["violations"]
+        self.assert_example_joins(
+            witness, {"R": ("A", "B"), "S": ("C", "D"), "T": ("B", "C")},
+            list(witness["witness_rows"].values()), [witness["spurious_tuple"]], ["R", "T", "S"],
+        )
 
     def test_lossless_decomposition_can_fail_to_preserve_dependency(self):
         schema = """
@@ -109,6 +201,20 @@ class VerificationTests(unittest.TestCase):
         first, second = violation["witness_rows"]
         self.assertEqual((first["A"], first["B"]), (second["A"], second["B"]))
         self.assertNotEqual(first["C"], second["C"])
+        self.assert_example_joins(violation, {"R": ("A", "C"), "S": ("C", "B")},
+                                  [first, second], [first, second], ["R", "S"])
+        self.assertEqual(violation["example_tables"], {
+            "R": [{"A": 0, "C": 0}, {"A": 0, "C": 1}],
+            "S": [{"C": 0, "B": 0}, {"C": 1, "B": 0}],
+        })
+        self.assertIn("Example table rows before the join", violation["message"])
+        self.assertEqual(violation["message"].count("Join trace for"), 2)
+        self.assertIn("Join S row 1 on C=0.", violation["message"])
+        self.assertIn("Join S row 2 on C=1.", violation["message"])
+        self.assertIn(f"Joined row 1: {first}", violation["message"])
+        self.assertIn(f"Joined row 2: {second}", violation["message"])
+        self.assertIn("The joined rows agree on A=0, B=0 and differ on C (0 versus 1).",
+                      violation["message"])
 
     def test_multiway_decomposition_can_be_lossless_when_each_pair_is_lossy(self):
         schema = """

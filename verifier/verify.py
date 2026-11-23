@@ -171,6 +171,85 @@ def _normal_form_violations(relations, closure):
     return second_nf, third_nf
 
 
+def _project_example_tables(relations, source_rows):
+    """Project the witness data to each relation under set semantics."""
+    tables = {}
+    for relation in relations:
+        projected = {tuple(row[column] for column in relation.columns) for row in source_rows}
+        tables[relation.name] = [dict(zip(relation.columns, values)) for values in sorted(projected)]
+    return tables
+
+
+def _trace_join(relations, tables, target):
+    """Select one example row per table whose natural join yields target."""
+    remaining = list(relations)
+    joined_columns = set()
+    steps = []
+    while remaining:
+        index = next((i for i, relation in enumerate(remaining)
+                      if joined_columns.intersection(relation.columns)), 0)
+        relation = remaining.pop(index)
+        projected = {column: target[column] for column in relation.columns}
+        steps.append({
+            "relation": relation.name,
+            "row_number": tables[relation.name].index(projected) + 1,
+            "join_values": {column: value for column, value in projected.items()
+                            if column in joined_columns},
+        })
+        joined_columns.update(relation.columns)
+    return steps
+
+
+def _display_example_tables(relations, tables):
+    lines = ["  Example table rows before the join"]
+    for relation in relations:
+        lines.append(f"    {relation.name}({', '.join(relation.columns)})")
+        for number, row in enumerate(tables[relation.name], start=1):
+            values = ", ".join(str(row[column]) for column in relation.columns)
+            lines.append(f"      Row {number} ({values})")
+    return lines
+
+
+def _display_assignments(values):
+    return ", ".join(f"{attribute}={value}" for attribute, value in values.items())
+
+
+def _display_join_trace(steps):
+    first, *remaining = steps
+    lines = [f"    Start with {first['relation']} row {first['row_number']}."]
+    for step in remaining:
+        row = f"{step['relation']} row {step['row_number']}"
+        if step["join_values"]:
+            lines.append(f"    Join {row} on {_display_assignments(step['join_values'])}.")
+        else:
+            lines.append(f"    Combine with {row} by Cartesian product.")
+    return lines
+
+
+def _lossless_join_details(relations, target, witness_rows):
+    columns = {relation.name: set(relation.columns) for relation in relations}
+    join_attributes = {}
+    for attribute in target:
+        names = [name for name, attributes in columns.items() if attribute in attributes]
+        if len(names) > 1:
+            join_attributes[attribute] = names
+
+    spurious_join_pairs = []
+    for first, second in combinations(columns, 2):
+        shared = columns[first] & columns[second]
+        if not shared:
+            continue
+        combined = columns[first] | columns[second]
+        if any(all(row[attribute] == target[attribute] for attribute in combined)
+               for row in witness_rows.values()):
+            continue
+        spurious_join_pairs.append({
+            "relations": [first, second],
+            "join_values": {attribute: target[attribute] for attribute in sorted(shared)},
+        })
+    return join_attributes, spurious_join_pairs
+
+
 def _lossless_violations(relations, dependencies, attributes):
     solver = z3.Solver()
     rows = [{attribute: z3.Int(f"row_{i}_{j}") for j, attribute in enumerate(attributes)}
@@ -194,13 +273,36 @@ def _lossless_violations(relations, dependencies, attributes):
     witness_rows = {relation.name: {attribute: model.eval(cell, model_completion=True).as_long()
                                    for attribute, cell in row.items()}
                     for relation, row in zip(relations, rows)}
-    row_lines = [f"  Row for {name}: {values}" for name, values in witness_rows.items()]
+    example_tables = _project_example_tables(relations, witness_rows.values())
+    join_trace = _trace_join(relations, example_tables, spurious)
+    join_attributes, spurious_join_pairs = _lossless_join_details(relations, spurious, witness_rows)
+    join_lines = []
+    for pair in spurious_join_pairs:
+        first, second = pair["relations"]
+        values = _display_assignments(pair["join_values"])
+        join_lines.append(f"  Joining {first} and {second} on {values} produces a spurious combination "
+                          "absent from every source row.")
+    if not join_attributes:
+        join_lines.append("  The relations have disjoint columns, so their natural join is a Cartesian product.")
+    elif len(relations) > 2 or not spurious_join_pairs:
+        join_lines.extend(f"  Shared join attribute {attribute}={spurious[attribute]} matches across "
+                          f"{', '.join(names)}." for attribute, names in join_attributes.items())
+    row_lines = [f"    Source row {number}: {values}"
+                 for number, values in enumerate(witness_rows.values(), start=1)]
     return [{
         "relations": list(witness_rows), "spurious_tuple": spurious, "witness_rows": witness_rows,
-        "message": ("Joining the projections can introduce a spurious tuple. The rows below "
-                    "satisfy all supplied dependencies, and each named relation's projection "
-                    "has a matching row for the tuple. None of the source rows is that tuple.\n"
-                    f"  Spurious tuple: {spurious}\n" + "\n".join(row_lines)),
+        "join_attributes": join_attributes, "spurious_join_pairs": spurious_join_pairs,
+        "example_tables": example_tables, "join_traces": [join_trace],
+        "message": "\n".join([
+            "Joining the projections can introduce a spurious tuple.",
+            *join_lines,
+            "  Source data before decomposition (satisfies all supplied dependencies)",
+            *row_lines,
+            *_display_example_tables(relations, example_tables),
+            "  Join trace for the spurious tuple",
+            *_display_join_trace(join_trace),
+            f"  Spurious tuple: {spurious}",
+        ]),
     }]
 
 
@@ -232,18 +334,37 @@ def _preservation_violations(relations, dependencies, attributes, closure):
                     relation_columns[relation.name] = columns
             locations = ", ".join(f"{name}{_display(columns)}"
                                   for name, columns in relation_columns.items())
+            example_tables = _project_example_tables(relations, rows)
+            join_traces = [_trace_join(relations, example_tables, row) for row in rows]
+            witness_lines = []
+            for number, (row, trace) in enumerate(zip(rows, join_traces), start=1):
+                witness_lines.extend([
+                    f"  Join trace for witness row {number}",
+                    *_display_join_trace(trace),
+                    f"  Joined row {number}: {row}",
+                ])
+            agreements = {attribute: rows[0][attribute] for attribute in sorted(dependency.determinant)}
+            differences = ", ".join(f"{attribute} ({rows[0][attribute]} versus {rows[1][attribute]})"
+                                    for attribute in sorted(missing))
             violations.append({
                 "dependency": dependency.source,
                 "relation_columns": relation_columns,
                 "reachable_attributes": sorted(reached),
                 "missing_attributes": sorted(missing),
                 "witness_rows": rows,
-                "message": (f"{dependency.source} is not preserved. The dependencies enforceable "
-                            f"in the individual relations can derive only {_display(reached)} "
-                            f"from its determinant. The missing logical attributes are "
-                            f"{_display(missing)}. The FD's columns occur in {locations}. "
-                            "These two rows satisfy every projected "
-                            f"dependency and violate the supplied dependency: {rows}"),
+                "example_tables": example_tables,
+                "join_traces": join_traces,
+                "message": "\n".join([
+                    f"{dependency.source} is not preserved. The dependencies enforceable "
+                    f"in the individual relations can derive only {_display(reached)} "
+                    f"from its determinant. The missing logical attributes are "
+                    f"{_display(missing)}. The FD's columns occur in {locations}.",
+                    "  Each example table satisfies its projected dependencies.",
+                    *_display_example_tables(relations, example_tables),
+                    *witness_lines,
+                    f"  The joined rows agree on {_display_assignments(agreements)} "
+                    f"and differ on {differences}.",
+                ]),
             })
     return violations
 

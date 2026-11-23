@@ -54,6 +54,8 @@ class LauncherTests(unittest.TestCase):
             "PIPELINE_ID_FIELD": "case",
             "PIPELINE_BACKEND": "ollama",
             "PIPELINE_MODEL": "test-model",
+            "PIPELINE_API_KEY": "file-key",
+            "PIPELINE_API_BASE": "http://file.example",
             "PIPELINE_TIMEOUT_SECONDS": 12,
             "PIPELINE_MAX_ITERATIONS": max_iterations,
             "PIPELINE_EXTRACTION_PROMPT": self.extraction_prompt.name,
@@ -188,6 +190,39 @@ class LauncherTests(unittest.TestCase):
         self.assertEqual(exit_code, 2)
         model.assert_not_called()
         self.assertIn("debug", error.getvalue().lower())
+
+    def test_cli_model_options_override_dotenv_independently(self):
+        self.configure()
+        script = self.copy_launcher()
+        cases = [
+            (
+                ["--model", "other-local-model"],
+                ("other-local-model", "ollama", "file-key", "http://file.example", 12.0, 2),
+            ),
+            (
+                ["--backend", "hosted", "--model", "openai/test-model", "--api-key", "cli-key",
+                 "--api-base", "https://cli.example/v1", "--timeout-seconds", "4.5",
+                 "--max-iterations", "5"],
+                ("openai/test-model", "hosted", "cli-key", "https://cli.example/v1", 4.5, 5),
+            ),
+            (
+                ["--api-key", "", "--api-base", ""],
+                ("test-model", "ollama", None, None, 12.0, 2),
+            ),
+        ]
+        batch_results = {"records": 1, "verified": 1, "exhausted": 0, "errors": 0}
+        for args, (model, backend, api_key, api_base, timeout, max_iterations) in cases:
+            with (self.subTest(args=args), patch("pipeline.llm.LLMClient") as client,
+                  patch("pipeline.batch.run_batch", return_value=batch_results) as batch,
+                  patch.object(sys, "argv", [str(script), *args]), redirect_stdout(StringIO())):
+                with self.assertRaises(SystemExit) as exited:
+                    runpy.run_path(str(script), run_name="__main__")
+
+                self.assertEqual(exited.exception.code, 0)
+                client.assert_called_once_with(
+                    model, backend=backend, api_key=api_key, api_base=api_base, timeout=timeout,
+                )
+                self.assertEqual(batch.call_args.kwargs["max_iterations"], max_iterations)
 
     def test_removed_dry_run_argument_is_rejected(self):
         self.configure(debug="true")

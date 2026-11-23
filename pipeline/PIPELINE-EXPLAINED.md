@@ -1,6 +1,6 @@
 # How the text-to-schema pipeline works
 
-`run_pipeline.py` reads its input path, model settings, prompt paths, and output paths from the root `.env`. Run it with `python run_pipeline.py`. The configured input is UTF-8 JSONL, with one database specification per record. By default, the `question` field supplies the specification and `id` supplies the report ID. When the ID is missing, the ID uses the physical input line number, such as `line-3`. [Batch setup](README.md)
+`run_pipeline.py` reads its input path, prompt paths, output paths, and default model settings from the root `.env`. Run it with `python run_pipeline.py` and add terminal flags for any model settings you want to override. The configured input is UTF-8 JSONL, with one database specification per record. By default, the `question` field supplies the specification and `id` supplies the report ID. When the ID is missing, the ID uses the physical input line number, such as `line-3`. [Batch setup](README.md)
 
 ## Debug mode
 

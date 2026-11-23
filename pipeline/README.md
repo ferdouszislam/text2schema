@@ -12,6 +12,16 @@ python run_pipeline.py
 
 The script prints the batch counts. Exit status `0` means every record verified, `1` means at least one record was exhausted or had an error, and `2` means setup or the batch itself failed.
 
+### Override model settings for one run
+
+Each flag overrides its matching `.env` setting for that run. Omitted flags use the values from `.env`.
+
+```bash
+python run_pipeline.py --backend ollama --model qwen3:8b --timeout-seconds 60 --max-iterations 2
+```
+
+Pass `--api-key ""` or `--api-base ""` to clear a configured key or endpoint. Run `python run_pipeline.py --help` to list the available flags.
+
 ### Debug with one record
 
 Set `debug=true` in the root `.env` and run the same command.
@@ -28,16 +38,19 @@ The input is UTF-8 JSONL with one JSON object per line. The default fields match
 {"id": "employee-example", "question": "Each employee has a unique integer ID and a full name."}
 ```
 
-| `.env` setting | Purpose |
-| --- | --- |
-| `debug` | Use `false` for the full batch or `true` to run the longest valid specification. Defaults to `false`. |
-| `PIPELINE_INPUT_JSONL` | Input dataset. |
-| `PIPELINE_OUTPUT_CSV`, `PIPELINE_EXTRACTION_CSV` | Batch and extraction reports. Defaults are `pipeline/results.csv` and `pipeline/extraction_results.csv`. |
-| `PIPELINE_SPEC_FIELD`, `PIPELINE_ID_FIELD` | Keys for the specification and record ID. The defaults are `question` and `id`. |
-| `PIPELINE_BACKEND`, `PIPELINE_MODEL` | Select `ollama` with an installed local model tag or `hosted` with a LiteLLM `provider/model` name. |
-| `PIPELINE_API_KEY`, `PIPELINE_API_BASE` | Supply an API key or override the model endpoint when needed. |
-| `PIPELINE_TIMEOUT_SECONDS`, `PIPELINE_MAX_ITERATIONS` | Set the model request timeout and the total proposal limit per specification. |
-| `PIPELINE_EXTRACTION_PROMPT`, `PIPELINE_SCHEMA_PROMPT` | Select the editable prompt files. |
+| `.env` setting | Terminal flag | Purpose |
+| --- | --- | --- |
+| `debug` | | Use `false` for the full batch or `true` to run the longest valid specification. Defaults to `false`. |
+| `PIPELINE_INPUT_JSONL` | | Input dataset. |
+| `PIPELINE_OUTPUT_CSV`, `PIPELINE_EXTRACTION_CSV` | | Batch and extraction reports. Defaults are `pipeline/results.csv` and `pipeline/extraction_results.csv`. |
+| `PIPELINE_SPEC_FIELD`, `PIPELINE_ID_FIELD` | | Keys for the specification and record ID. The defaults are `question` and `id`. |
+| `PIPELINE_BACKEND` | `--backend` | Select `ollama` or `hosted`. |
+| `PIPELINE_MODEL` | `--model` | Set an installed Ollama model tag or a LiteLLM `provider/model` name. |
+| `PIPELINE_API_KEY` | `--api-key` | Supply an API key when needed. |
+| `PIPELINE_API_BASE` | `--api-base` | Override the model endpoint. |
+| `PIPELINE_TIMEOUT_SECONDS` | `--timeout-seconds` | Set the model request timeout in seconds. |
+| `PIPELINE_MAX_ITERATIONS` | `--max-iterations` | Set the total proposal limit per specification. |
+| `PIPELINE_EXTRACTION_PROMPT`, `PIPELINE_SCHEMA_PROMPT` | | Select the editable prompt files. |
 
 Relative paths are resolved from the project root.
 

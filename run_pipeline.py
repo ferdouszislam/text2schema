@@ -1,5 +1,6 @@
-"""Run the JSONL-to-CSV pipeline using the project's .env configuration."""
+"""Run the JSONL-to-CSV pipeline. Omitted model options use values from .env."""
 
+import argparse
 from pathlib import Path
 import sys
 
@@ -26,13 +27,19 @@ def _read_prompt(path: Path) -> str:
     return prompt
 
 
-def main(config_path: str | Path | None = None) -> int:
+def main(
+    config_path: str | Path | None = None,
+    *,
+    model_overrides: dict[str, str] | None = None,
+) -> int:
     """Run with root-relative paths and return a process exit status."""
     settings_path = _ROOT / ".env" if config_path is None else Path(config_path)
     api_key = None
     try:
         with settings_path.open(encoding="utf-8") as config:
             settings = dotenv_values(stream=config, interpolate=False)
+        if model_overrides is not None:
+            settings.update(model_overrides)
         api_key = settings.get("PIPELINE_API_KEY") or None
         debug_setting = (settings.get("debug", "false") or "").strip().lower()
         if debug_setting not in ("true", "false"):
@@ -105,7 +112,18 @@ def main(config_path: str | Path | None = None) -> int:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 1:
-        print("Configure the pipeline in .env, then run this script without arguments.", file=sys.stderr)
-        raise SystemExit(2)
-    raise SystemExit(main())
+    parser = argparse.ArgumentParser(
+        description=__doc__, argument_default=argparse.SUPPRESS, allow_abbrev=False,
+    )
+    parser.add_argument("--backend", dest="PIPELINE_BACKEND", metavar="NAME",
+                        help="Model backend (ollama or hosted).")
+    parser.add_argument("--model", dest="PIPELINE_MODEL", metavar="NAME", help="Model name.")
+    parser.add_argument("--api-key", dest="PIPELINE_API_KEY", metavar="KEY",
+                        help="API key. Pass an empty string to clear it.")
+    parser.add_argument("--api-base", dest="PIPELINE_API_BASE", metavar="URL",
+                        help="API base URL. Pass an empty string to clear it.")
+    parser.add_argument("--timeout-seconds", dest="PIPELINE_TIMEOUT_SECONDS", metavar="SECONDS",
+                        help="Model request timeout in seconds.")
+    parser.add_argument("--max-iterations", dest="PIPELINE_MAX_ITERATIONS", metavar="COUNT",
+                        help="Maximum schema proposals per specification.")
+    raise SystemExit(main(model_overrides=vars(parser.parse_args())))

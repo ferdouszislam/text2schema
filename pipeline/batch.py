@@ -1,6 +1,6 @@
 """Run the pipeline for each JSONL specification and write CSV traces."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 import csv
 import json
 from pathlib import Path
@@ -43,18 +43,45 @@ def _write_event(writers, spec_id, line_number, event, specification=""):
     results_writer.writerow(row)
 
 
+def _parse_record(line):
+    record = json.loads(line)
+    if not isinstance(record, dict):
+        raise ValueError("Expected a JSON object.")
+    return record
+
+
+def _read_specification(record, specification_field):
+    specification = record.get(specification_field)
+    if not isinstance(specification, str) or not specification.strip():
+        raise ValueError(f"Field {specification_field!r} must contain a nonempty specification string.")
+    return specification
+
+
+def _longest_record(records: Iterable[tuple[int, str]], specification_field: str) -> tuple[int, str]:
+    longest = None
+    max_words = 0
+    for line_number, line in records:
+        try:
+            specification = _read_specification(_parse_record(line), specification_field)
+        except ValueError:
+            continue
+        words = len(specification.split())
+        if words > max_words:
+            longest = line_number, line
+            max_words = words
+    if longest is None:
+        raise ValueError(f"Input JSONL contains no nonempty specifications in field {specification_field!r}.")
+    return longest
+
+
 def _run_record(line, line_number, writers, llm, specification_field, id_field, pipeline_options):
     spec_id = f"line-{line_number}"
     try:
-        record = json.loads(line)
-        if not isinstance(record, dict):
-            raise ValueError("Expected a JSON object.")
+        record = _parse_record(line)
         record_id = record.get(id_field)
         if (isinstance(record_id, str) and record_id.strip()) or type(record_id) is int:
             spec_id = str(record_id)
-        specification = record.get(specification_field)
-        if not isinstance(specification, str) or not specification.strip():
-            raise ValueError(f"Field {specification_field!r} must contain a nonempty specification string.")
+        specification = _read_specification(record, specification_field)
     except ValueError as error:
         _write_event(writers, spec_id, line_number, {"stage": "input", "status": "error", "feedback": str(error)})
         return "errors"
@@ -100,13 +127,14 @@ def run_batch(
     llm: Callable[[list[dict[str, str]]], str | LLMResponse],
     *,
     extraction_csv: str | Path | None = None,
+    longest_specification_only: bool = False,
     max_iterations: int = DEFAULT_MAX_ITERATIONS,
     specification_field: str = "question",
     id_field: str = "id",
     extraction_prompt: str | None = None,
     schema_prompt: str | None = None,
 ) -> dict[str, int]:
-    """Process every nonblank JSONL line in input order and publish two UTF-8 CSVs.
+    """Process nonblank JSONL lines in input order and publish two UTF-8 CSVs.
 
     The specification field contains the input text. The optional ID field
     supplies the source identifier, with ``line-N`` used when it is missing.
@@ -116,6 +144,8 @@ def run_batch(
     If omitted, ``extraction_csv`` defaults to ``extraction_<output name>``
     beside the results CSV. Both files are staged before publication. The
     return value counts records, verified schemas, exhausted records, and errors.
+    With ``longest_specification_only``, process only the first record with
+    the maximum whitespace-separated word count in a valid specification.
     """
     validate_iteration_limit(max_iterations)
     extraction_prompt, schema_prompt = load_prompts(extraction_prompt, schema_prompt)
@@ -136,6 +166,9 @@ def run_batch(
 
     counts = {"records": 0, "verified": 0, "exhausted": 0, "errors": 0}
     with source_path.open(encoding="utf-8-sig") as source:
+        records: Iterable[tuple[int, str]] = enumerate(source, start=1)
+        if longest_specification_only:
+            records = (_longest_record(records, specification_field),)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         extraction_path.parent.mkdir(parents=True, exist_ok=True)
         with (TemporaryDirectory(dir=output_path.parent) as results_dir,
@@ -151,7 +184,7 @@ def run_batch(
                 writers = results_writer, extraction_writer
                 for writer in writers:
                     writer.writeheader()
-                for line_number, line in enumerate(source, start=1):
+                for line_number, line in records:
                     if not line.strip():
                         continue
                     status = _run_record(line, line_number, writers, llm, specification_field, id_field, pipeline_options)

@@ -34,12 +34,22 @@ def main(config_path: str | Path | None = None) -> int:
         with settings_path.open(encoding="utf-8") as config:
             settings = dotenv_values(stream=config, interpolate=False)
         api_key = settings.get("PIPELINE_API_KEY") or None
+        debug_setting = (settings.get("debug", "false") or "").strip().lower()
+        if debug_setting not in ("true", "false"):
+            raise ValueError("Set debug to true or false in .env.")
+        debug = debug_setting == "true"
 
         input_jsonl = _ROOT / _required(settings, "PIPELINE_INPUT_JSONL")
         output_csv = _ROOT / _required(settings, "PIPELINE_OUTPUT_CSV")
         extraction_csv_setting = (settings.get("PIPELINE_EXTRACTION_CSV") or "").strip()
         extraction_csv = (_ROOT / extraction_csv_setting if extraction_csv_setting
                           else default_extraction_csv(output_csv))
+        if debug:
+            full_report_paths = {output_csv.resolve(), extraction_csv.resolve()}
+            output_csv = output_csv.with_name(f"debug_{output_csv.name}")
+            extraction_csv = extraction_csv.with_name(f"debug_{extraction_csv.name}")
+            if {output_csv.resolve(), extraction_csv.resolve()} & full_report_paths:
+                raise ValueError("Debug CSV paths must be separate from the full-run CSV paths.")
         specification_field = _required(settings, "PIPELINE_SPEC_FIELD")
         id_field = _required(settings, "PIPELINE_ID_FIELD")
         backend = _required(settings, "PIPELINE_BACKEND")
@@ -71,6 +81,7 @@ def main(config_path: str | Path | None = None) -> int:
             output_csv,
             llm,
             extraction_csv=extraction_csv,
+            longest_specification_only=debug,
             max_iterations=max_iterations,
             specification_field=specification_field,
             id_field=id_field,
@@ -88,11 +99,13 @@ def main(config_path: str | Path | None = None) -> int:
         f"Processed {results['records']} records with {results['verified']} verified, "
         f"{results['exhausted']} exhausted, and {results['errors']} errors."
     )
+    if debug:
+        print(f"Debug reports\n  {output_csv}\n  {extraction_csv}")
     return 0 if results["records"] == results["verified"] else 1
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 1:
-        print("Edit .env to configure the pipeline, then run this script without arguments.", file=sys.stderr)
+        print("Configure the pipeline in .env, then run this script without arguments.", file=sys.stderr)
         raise SystemExit(2)
     raise SystemExit(main())

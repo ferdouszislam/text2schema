@@ -2,6 +2,14 @@
 
 `run_pipeline.py` reads its input path, model settings, prompt paths, and output paths from the root `.env`. Run it with `python run_pipeline.py`. The configured input is UTF-8 JSONL, with one database specification per record. By default, the `question` field supplies the specification and `id` supplies the report ID. When the ID is missing, the ID uses the physical input line number, such as `line-3`. [Batch setup](README.md)
 
+## Debug mode
+
+Set `debug=true` in `.env` to process one specification. The default `debug=false` runs the full batch, and the values `true` and `false` are case-insensitive.
+
+The launcher scans the input and counts whitespace-separated words in each valid specification using `len(specification.split())`. It uses the field named by `PIPELINE_SPEC_FIELD` and skips input rows that lack a valid nonblank specification string. The earliest input row wins a tie. If the input has no valid specifications, the launcher reports an error.
+
+The selected record uses the configured model and retry limit. Each debug report goes beside its configured report with `debug_` before the filename, and the launcher prints both debug output paths.
+
 ## From specification to SQL
 
 The stages follow Figure 1 in the project proposal. [Project proposal](../formal_verification_guided_text2schema.pdf)

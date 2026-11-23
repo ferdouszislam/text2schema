@@ -12,6 +12,16 @@ python run_pipeline.py
 
 The script prints the batch counts. Exit status `0` means every record verified, `1` means at least one record was exhausted or had an error, and `2` means setup or the batch itself failed.
 
+### Debug with one record
+
+Set `debug=true` in the root `.env` and run the same command.
+
+```bash
+python run_pipeline.py
+```
+
+Debug mode runs the longest valid specification by word count, using the configured model and retry limit. It adds `debug_` before each configured CSV filename and prints both paths. The default debug reports are `pipeline/debug_results.csv` and `pipeline/debug_extraction_results.csv`. [Debug mode details](PIPELINE-EXPLAINED.md#debug-mode)
+
 The input is UTF-8 JSONL with one JSON object per line. The default fields match the cleaned RSchema records. `question` holds the specification and `id` identifies the record in the results.
 
 ```json
@@ -20,6 +30,7 @@ The input is UTF-8 JSONL with one JSON object per line. The default fields match
 
 | `.env` setting | Purpose |
 | --- | --- |
+| `debug` | Use `false` for the full batch or `true` to run the longest valid specification. Defaults to `false`. |
 | `PIPELINE_INPUT_JSONL` | Input dataset. |
 | `PIPELINE_OUTPUT_CSV`, `PIPELINE_EXTRACTION_CSV` | Batch and extraction reports. Defaults are `pipeline/results.csv` and `pipeline/extraction_results.csv`. |
 | `PIPELINE_SPEC_FIELD`, `PIPELINE_ID_FIELD` | Keys for the specification and record ID. The defaults are `question` and `id`. |

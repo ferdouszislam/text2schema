@@ -128,4 +128,27 @@ Each completed model publishes `results.csv` and `extraction_results.csv` under 
 
 A model download failure or a fatal pipeline failure makes the job exit with status `2` after it attempts the remaining models. Check the job log for the affected model.
 
-Copy results you want to keep to backed-up storage. Fir scratch files are subject to automatic purge. [Fir storage documentation](https://ualberta-rcg.github.io/ragflow-wiki-data/base/software/fir/#storage)
+## 7. Download the results to your computer
+
+After the job finishes, run these commands on Fir to create a ZIP of the entire `pipeline/results/` folder. The command prints the archive filename when it finishes.
+
+```bash
+cd "$SCRATCH/text2schema"
+archive="text2schema-results-$(date +%Y%m%d-%H%M%S).zip"
+zip -r "$archive" pipeline/results && printf '%s\n' "$archive"
+```
+
+In a terminal on your computer, go to the directory where you want to save the results. Replace `ARCHIVE_NAME.zip` with the filename printed on Fir and `YOUR_FIR_USERNAME` with your Alliance login.
+
+```bash
+archive=ARCHIVE_NAME.zip
+scp "YOUR_FIR_USERNAME@fir.alliancecan.ca:scratch/text2schema/$archive" .
+```
+
+To extract the ZIP into a local folder named after the archive, run the following in the same terminal. The extracted folder contains `pipeline/results/`.
+
+```bash
+unzip "$archive" -d "${archive%.zip}"
+```
+
+Keep a local or backed-up copy of any results you need. Fir scratch files are subject to automatic purge. [Fir storage documentation](https://ualberta-rcg.github.io/ragflow-wiki-data/base/software/fir/#storage)

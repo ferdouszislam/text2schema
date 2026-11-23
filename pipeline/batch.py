@@ -3,6 +3,7 @@
 from collections.abc import Callable, Iterable, Iterator
 import csv
 import json
+import logging
 from pathlib import Path
 from shutil import copy2
 from tempfile import TemporaryDirectory
@@ -17,6 +18,7 @@ from pipeline.run import (
 )
 
 
+_LOGGER = logging.getLogger(__name__)
 _TOKEN_COLUMNS = ("input_tokens", "output_tokens", "total_tokens")
 CSV_COLUMNS = (
     "spec_id", "input_line", "stage", "iteration", "status", "database_specification",
@@ -95,6 +97,7 @@ def _run_record(line, line_number, writers, llm, specification_field, id_field, 
             spec_id = str(record_id)
         specification = _read_specification(record, specification_field)
     except ValueError as error:
+        _LOGGER.info("Input error on line %d: %s", line_number, error)
         _write_event(writers, spec_id, line_number, {"stage": "input", "status": "error", "feedback": str(error)})
         return "errors"
 
@@ -184,6 +187,7 @@ def run_batch(
         records: Iterable[tuple[int, str]] = enumerate(source, start=1)
         if debug_sample or longest_specification_only:
             records = _select_records_by_word_count(records, specification_field, longest_only=not debug_sample)
+            _LOGGER.info("Selected %d record(s) by specification length", len(records))
         output_path.parent.mkdir(parents=True, exist_ok=True)
         extraction_path.parent.mkdir(parents=True, exist_ok=True)
         with (TemporaryDirectory(dir=output_path.parent) as results_dir,
@@ -202,6 +206,7 @@ def run_batch(
                 for line_number, line in records:
                     if not line.strip():
                         continue
+                    _LOGGER.info("Processing record %d (input line %d)", counts["records"] + 1, line_number)
                     status = _run_record(line, line_number, writers, llm, specification_field, id_field, pipeline_options)
                     counts["records"] += 1
                     counts[status] += 1

@@ -2,20 +2,23 @@
 
 from collections.abc import Callable
 import json
+import logging
 from pathlib import Path
 import re
+from time import monotonic
 
 from create_query_generator.create_query_generator import (
     SUPPORTED_TYPE_NAMES,
     generate_create_queries,
     normalize_attribute_types,
 )
-from pipeline.llm import LLMClient, LLMResponse
+from pipeline.llm import LLMClient, LLMError, LLMResponse
 from util.relational_schema import parse_identifier, parse_relational_schema
 from verifier.verify import parse_functional_dependencies, verify_schema
 
 
 DEFAULT_MAX_ITERATIONS = 3
+_LOGGER = logging.getLogger(__name__)
 _PROMPT_DIRECTORY = Path(__file__).with_name("prompts")
 _OUTER_FENCE = re.compile(r"```[^\r\n`]*\r?\n(.*?)\r?\n```", re.DOTALL)
 
@@ -50,7 +53,11 @@ def _messages(instructions, data):
 
 def _request(llm, messages):
     # Keep the recorded messages intact even if an adapter rewrites its copy.
-    response = llm([message.copy() for message in messages])
+    try:
+        response = llm([message.copy() for message in messages])
+    except LLMError as error:
+        _LOGGER.info("Model request failed: %s", error)
+        raise
     if isinstance(response, LLMResponse):
         return response
     return LLMResponse(text=response if isinstance(response, str) else "")
@@ -119,7 +126,11 @@ def _check_candidate(schema, dependencies, attribute_types):
     return verification, queries, verification["feedback"]
 
 
-def _emit(callback, stage, iteration, status, messages, response, **fields):
+def _emit(callback, stage, iteration, status, messages, response, *, started_at, **fields):
+    _LOGGER.info(
+        "%s finished (iteration=%d, status=%s, elapsed=%.1fs)",
+        stage.capitalize(), iteration, status, monotonic() - started_at,
+    )
     if callback is not None:
         callback({
             "stage": stage,
@@ -175,15 +186,17 @@ def run_pipeline(
     inputs = {"database_specification": database_specification}
     messages = _messages(extraction_prompt, inputs)
     response = None
+    _LOGGER.info("Starting extraction request")
+    started_at = monotonic()
     try:
         response = _request(llm, messages)
         types, dependencies = _extract(response.text)
     except (ExtractionError, RuntimeError) as error:
-        _emit(on_event, "extraction", 0, "error", messages, response, feedback=str(error))
+        _emit(on_event, "extraction", 0, "error", messages, response, started_at=started_at, feedback=str(error))
         raise
 
     attributes = list(types)
-    _emit(on_event, "extraction", 0, "extracted", messages, response, attributes=attributes,
+    _emit(on_event, "extraction", 0, "extracted", messages, response, started_at=started_at, attributes=attributes,
           attribute_types=types, functional_dependencies=list(dependencies))
     inputs.update(attributes=attributes, functional_dependencies=dependencies)
 
@@ -192,13 +205,15 @@ def run_pipeline(
         messages = _messages(schema_prompt, inputs)
         response = None
         schema = ""
+        _LOGGER.info("Starting schema attempt %d/%d", iteration, max_iterations)
+        started_at = monotonic()
         try:
             response = _request(llm, messages)
             schema = _unwrap(response.text)
             verification, queries, feedback = _check_candidate(schema, dependencies, types)
         except RuntimeError as error:
             _emit(on_event, "schema", iteration, "error", messages, response,
-                  relational_schema=schema, feedback=str(error))
+                  started_at=started_at, relational_schema=schema, feedback=str(error))
             raise
         attempt = {
             "iteration": iteration,
@@ -210,7 +225,7 @@ def run_pipeline(
         status = "exhausted" if iteration == max_iterations else "rejected"
         if queries:
             status = "verified"
-        _emit(on_event, "schema", iteration, status, messages, response, relational_schema=schema,
+        _emit(on_event, "schema", iteration, status, messages, response, started_at=started_at, relational_schema=schema,
               feedback=feedback, verification=verification, create_queries=queries)
         if queries:
             break

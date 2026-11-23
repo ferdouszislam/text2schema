@@ -2,9 +2,11 @@
 
 import argparse
 from contextlib import suppress
+import logging
 from pathlib import Path
 import re
 import sys
+from time import monotonic
 
 from dotenv import dotenv_values
 
@@ -13,6 +15,7 @@ from pipeline.llm import LLMClient
 
 
 _ROOT = Path(__file__).resolve().parent
+_LOGGER = logging.getLogger("pipeline")
 
 
 def _required(settings: dict[str, str | None], key: str) -> str:
@@ -95,6 +98,11 @@ def main(
         run_directory = _create_run_directory(model, debug=debug)
         output_csv = run_directory / "results.csv"
         extraction_csv = default_extraction_csv(output_csv)
+        _LOGGER.info(
+            "Starting %s batch for %r (backend=%s, request timeout=%gs, max schema attempts=%d, input=%s)",
+            "debug" if debug else "full", model, backend, timeout, max_iterations, input_jsonl,
+        )
+        started_at = monotonic()
         results = run_batch(
             input_jsonl,
             output_csv,
@@ -117,6 +125,7 @@ def main(
         print(f"Pipeline stopped. {message}", file=sys.stderr)
         return 2
 
+    _LOGGER.info("Batch finished in %.1fs", monotonic() - started_at)
     print(
         f"Processed {results['records']} records with {results['verified']} verified, "
         f"{results['exhausted']} exhausted, and {results['errors']} errors."
@@ -141,4 +150,14 @@ if __name__ == "__main__":
                         help="Model request timeout in seconds.")
     parser.add_argument("--max-iterations", dest="PIPELINE_MAX_ITERATIONS", metavar="COUNT",
                         help="Maximum schema proposals per specification.")
-    raise SystemExit(main(model_overrides=vars(parser.parse_args())))
+    model_overrides = vars(parser.parse_args())
+    progress_handler = logging.StreamHandler()
+    progress_handler.setFormatter(logging.Formatter("[%(asctime)s] %(message)s", "%Y-%m-%dT%H:%M:%S%z"))
+    previous_level = _LOGGER.level
+    _LOGGER.setLevel(logging.INFO)
+    _LOGGER.addHandler(progress_handler)
+    try:
+        raise SystemExit(main(model_overrides=model_overrides))
+    finally:
+        _LOGGER.removeHandler(progress_handler)
+        _LOGGER.setLevel(previous_level)

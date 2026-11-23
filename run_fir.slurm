@@ -29,13 +29,13 @@ if ! command -v "$ollama_bin" >/dev/null; then
 fi
 
 models=(
+    'qwen3.5:35b-a3b-q8_0'
     'qwen3.8:27b-q8_0'
     'qwen3.5:9b-q4_K_M'
-    'qwen3.5:4b-q4_K_M'
 )
 
 export OLLAMA_MODELS="${OLLAMA_MODELS:-${SCRATCH:?Set SCRATCH or OLLAMA_MODELS.}/ollama-models}"
-export OLLAMA_CONTEXT_LENGTH="${OLLAMA_CONTEXT_LENGTH:-8192}"
+export OLLAMA_CONTEXT_LENGTH="${OLLAMA_CONTEXT_LENGTH:-32768}"
 export OLLAMA_NUM_PARALLEL=1
 export OLLAMA_MAX_LOADED_MODELS=1
 export OLLAMA_HOST="127.0.0.1:$((20000 + SLURM_JOB_ID % 40000))"

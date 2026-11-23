@@ -2,9 +2,9 @@
 
 [run_fir.slurm](run_fir.slurm) runs the pipeline on one full 80 GB H100. It starts Ollama on the allocated node and runs these models in order, one at a time. [Fir GPU documentation](https://ualberta-rcg.github.io/ragflow-wiki-data/base/software/fir/#gpu-instances)
 
-1. `qwen3.8:27b-q8_0`
-2. `qwen3.5:9b-q4_K_M`
-3. `qwen3.5:4b-q4_K_M`
+1. `qwen3.5:35b-a3b-q8_0`
+2. `qwen3.8:27b-q8_0`
+3. `qwen3.5:9b-q4_K_M`
 
 ## 1. Clone the project into Fir scratch
 
@@ -90,7 +90,9 @@ command -v ollama
 
 The check should print `$HOME/.local/ollama/bin/ollama` with your actual home directory. Future Bash logins pick up this path, and `run_fir.slurm` can find Ollama by name.
 
-Allow more than 40 GB of free scratch space for the model cache. The job pulls missing models on the compute node and reuses the files in `$SCRATCH/ollama-models`. It sets an 8,192-token context by default. [Fir compute-node access and storage](https://ualberta-rcg.github.io/ragflow-wiki-data/base/software/fir/) · [Qwen 3.8 download size](https://ollama.com/library/qwen3.8:27b-q8_0) · [Qwen 3.5 download sizes](https://ollama.com/library/qwen3.5/tags)
+Allow at least 85 GB of free scratch space for a fresh model cache. The three downloads total about 76 GB. The job pulls missing models on the compute node and reuses files in `$SCRATCH/ollama-models`. [Fir compute-node access and storage](https://ualberta-rcg.github.io/ragflow-wiki-data/base/software/fir/) · [Qwen 3.8 download size](https://ollama.com/library/qwen3.8:27b-q8_0) · [Qwen 3.5 download sizes](https://ollama.com/library/qwen3.5/tags)
+
+The job sets a 32,768-token (32K) context for all three models by default. Set `OLLAMA_CONTEXT_LENGTH` in the submission environment to override it. [Ollama context settings](https://docs.ollama.com/context-length)
 
 ## 5. Submit the job from the project root
 

@@ -73,18 +73,22 @@ class LauncherTests(unittest.TestCase):
         script.write_bytes(Path(launcher.__file__).read_bytes())
         return script
 
-    def test_debug_cli_uses_first_longest_valid_specification_and_separate_reports(self):
+    def test_debug_cli_samples_longest_shortest_and_middle_in_separate_reports(self):
         self.configure(debug="TrUe")
-        longest_specification = "A   determines\tB and C."
+        longest_specification = "A   determines\tB and B determines C."
+        shortest_specification = "Tiny spec."
+        middle_specification = "The schema contains three attributes."
         self.write_records(
             "",
-            {"case": "first", "requirements": "A tiny case."},
+            {"case": "shortest", "requirements": shortest_specification},
             '{"requirements": "This malformed record has more words than the others",',
             {"case": "missing", "question": "This long specification uses the wrong input field."},
             {"case": "blank", "requirements": "\n\t "},
-            {"case": "winner", "requirements": longest_specification},
-            {"case": "tie", "requirements": "Longer identifiers increase character count."},
-            {"case": "last", "requirements": "A brief case."},
+            {"case": "longest", "requirements": longest_specification},
+            {"case": "longest-tie", "requirements": "These longer identifiers increase record word count."},
+            {"case": "lower-middle", "requirements": "A brief schema description."},
+            {"case": "middle", "requirements": middle_specification},
+            {"case": "shortest-tie", "requirements": "Brief spec."},
         )
         existing_results = b"prior batch results\n"
         existing_extraction = b"prior extraction results\n"
@@ -94,7 +98,9 @@ class LauncherTests(unittest.TestCase):
 
         # Run the CLI from a temporary project root containing only the fixture configuration.
         script = self.copy_launcher()
-        llm = Mock(side_effect=[EXTRACTION, FAILING_SCHEMA, VERIFIED_SCHEMA])
+        llm = Mock(side_effect=[
+            EXTRACTION, FAILING_SCHEMA, VERIFIED_SCHEMA, EXTRACTION, VERIFIED_SCHEMA, EXTRACTION, VERIFIED_SCHEMA,
+        ])
         stdout = StringIO()
         with (patch("pipeline.llm.LLMClient", return_value=llm),
               patch.object(sys, "argv", [str(script)]), redirect_stdout(stdout)):
@@ -102,18 +108,24 @@ class LauncherTests(unittest.TestCase):
                 runpy.run_path(str(script), run_name="__main__")
 
         self.assertEqual(exited.exception.code, 0)
-        self.assertEqual(llm.call_count, 3)
+        self.assertEqual(llm.call_count, 7)
         rows = self.read_csv(self.debug_report_dir / self.results.name)
         self.assertEqual([(row["spec_id"], row["input_line"], row["status"]) for row in rows], [
-            ("winner", "6", "extracted"), ("winner", "6", "rejected"), ("winner", "6", "verified"),
+            ("longest", "6", "extracted"), ("longest", "6", "rejected"), ("longest", "6", "verified"),
+            ("shortest", "2", "extracted"), ("shortest", "2", "verified"),
+            ("middle", "9", "extracted"), ("middle", "9", "verified"),
         ])
-        extraction_payload = json.loads(llm.call_args_list[0].args[0][1]["content"])
-        self.assertEqual(extraction_payload["database_specification"], longest_specification)
-        retry_messages = llm.call_args_list[-1].args[0]
+        submitted_specifications = [
+            json.loads(llm.call_args_list[index].args[0][1]["content"])["database_specification"]
+            for index in (0, 3, 5)
+        ]
+        self.assertEqual(submitted_specifications, [longest_specification, shortest_specification, middle_specification])
+        retry_messages = llm.call_args_list[2].args[0]
         self.assertIn("3NF", json.loads(retry_messages[1]["content"])["feedback"])
         extraction_rows = self.read_csv(self.debug_report_dir / self.extraction.name)
         self.assertEqual([(row["spec_id"], row["input_line"]) for row in extraction_rows],
-                         [("winner", "6")])
+                         [("longest", "6"), ("shortest", "2"), ("middle", "9")])
+        self.assertIn("Processed 3 records with 3 verified", stdout.getvalue())
         self.assertIn(str(self.debug_report_dir), stdout.getvalue())
         self.assertEqual(self.results.read_bytes(), existing_results)
         self.assertEqual(self.extraction.read_bytes(), existing_extraction)
@@ -123,16 +135,18 @@ class LauncherTests(unittest.TestCase):
         self.debug_report_dir.mkdir(parents=True)
         previous_results = self.debug_report_dir / self.results.name
         previous_results.write_bytes(b"prior debug results\n")
-        llm = Mock(side_effect=[EXTRACTION, FAILING_SCHEMA])
+        llm = Mock(side_effect=[EXTRACTION, FAILING_SCHEMA, EXTRACTION, FAILING_SCHEMA])
         with (patch.object(launcher, "_ROOT", self.directory),
               patch.object(launcher, "LLMClient", return_value=llm), redirect_stdout(StringIO())):
             exit_code = launcher.main()
 
         self.assertEqual(exit_code, 1)
-        self.assertEqual(llm.call_count, 2)
+        self.assertEqual(llm.call_count, 4)
         debug_dir = self.debug_report_root / "test-model-1"
-        self.assertEqual([row["status"] for row in self.read_csv(debug_dir / self.results.name)],
-                         ["extracted", "exhausted"])
+        rows = self.read_csv(debug_dir / self.results.name)
+        self.assertEqual([(row["spec_id"], row["status"]) for row in rows], [
+            ("first", "extracted"), ("first", "exhausted"), ("second", "extracted"), ("second", "exhausted"),
+        ])
         self.assertTrue((debug_dir / self.extraction.name).is_file())
         self.assertEqual(previous_results.read_bytes(), b"prior debug results\n")
 
@@ -164,6 +178,7 @@ class LauncherTests(unittest.TestCase):
 
     def test_legacy_output_settings_do_not_change_where_reports_are_written(self):
         self.configure(debug="true")
+        self.write_records({"case": "only", "requirements": "A determines B and B determines C."})
         legacy_results = self.directory / "legacy_results.csv"
         legacy_extraction = self.directory / "legacy_extraction.csv"
         with self.config.open("a", encoding="utf-8") as config:

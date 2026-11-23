@@ -4,11 +4,11 @@
 
 ## Debug mode
 
-Set `debug=true` in `.env` to process one specification. The default `debug=false` runs the full batch, and the values `true` and `false` are case-insensitive.
+Set `debug=true` in `.env` to process up to three valid specifications. The default `debug=false` runs the full batch, and the values `true` and `false` are case-insensitive.
 
-The launcher scans the input and counts whitespace-separated words in each valid specification using `len(specification.split())`. It uses the field named by `PIPELINE_SPEC_FIELD` and skips input rows that lack a valid nonblank specification string. The earliest input row wins a tie. If the input has no valid specifications, the launcher reports an error.
+The launcher scans the input and counts whitespace-separated words in each valid specification using `len(specification.split())`. It uses the field named by `PIPELINE_SPEC_FIELD` and skips malformed records and rows without a nonblank specification string. It selects the longest specification first and then the shortest from the remaining records, using the earliest input line for ties. It sorts the remaining records by word count and input line number and takes the middle record. If two records fall in the middle, it chooses the second in that order. With just one or two valid specifications, it processes each once. If the input has no valid specifications, the launcher reports an error.
 
-The selected record uses the configured model and retry limit. The launcher saves both CSVs in `pipeline/results/debug/<model-name>/`, adding `-1`, `-2`, and later suffixes to the model folder name as needed for repeat debug runs.
+Each selected record uses the configured model and retry limit. The launcher saves both CSVs in `pipeline/results/debug/<model-name>/`, adding `-1`, `-2`, and later suffixes to the model folder name as needed for repeat debug runs.
 
 ## From specification to SQL
 
@@ -25,7 +25,7 @@ Malformed input, invalid extraction, and model call failures are recorded agains
 
 The launcher writes `results.csv` and `extraction_results.csv` into a new directory based on the selected model. For example, full runs with `openai/gpt-4o-mini` use `pipeline/results/openai-gpt-4o-mini/`, followed by directories with `-1`, `-2`, and later suffixes as needed. [Results locations](README.md#read-the-results)
 
-Both reports follow input order. Use `spec_id` and `input_line` together to identify the source record, including when IDs repeat. In either report, `prompt` is a JSON array containing the exact system and user messages passed to the model client. `model_response` holds the original assistant text, including formatting such as Markdown fences if present. Unavailable values leave empty cells.
+Both reports follow processing order. Full batches process records in input order. Debug runs process the longest, shortest, and middle selections in that order. Use `spec_id` and `input_line` together to identify the source record, including when IDs repeat. In either report, `prompt` is a JSON array containing the exact system and user messages passed to the model client. `model_response` holds the original assistant text, including formatting such as Markdown fences if present. Unavailable values leave empty cells.
 
 ### Batch results
 

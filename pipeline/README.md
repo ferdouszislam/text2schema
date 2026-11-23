@@ -22,7 +22,7 @@ python run_pipeline.py --backend ollama --model qwen3:8b --timeout-seconds 60 --
 
 Pass `--api-key ""` or `--api-base ""` to clear a configured key or endpoint. Run `python run_pipeline.py --help` to list the available flags.
 
-### Debug with one record
+### Debug with up to three records
 
 Set `debug=true` in the root `.env` and run the same command.
 
@@ -30,7 +30,7 @@ Set `debug=true` in the root `.env` and run the same command.
 python run_pipeline.py
 ```
 
-Debug mode runs the longest valid specification by word count, using the configured model and retry limit. It saves both CSVs under `pipeline/results/debug/<model-name>/`. [Debug mode details](PIPELINE-EXPLAINED.md#debug-mode)
+Debug mode runs the longest, shortest, and middle valid specifications by word count, in that order, using the configured model and retry limit. If only one or two valid specifications are available, it runs each once. It saves both CSVs under `pipeline/results/debug/<model-name>/`. [Debug mode details](PIPELINE-EXPLAINED.md#debug-mode)
 
 The input is UTF-8 JSONL with one JSON object per line. The default fields match the cleaned RSchema records. `question` holds the specification and `id` identifies the record in the results.
 
@@ -40,7 +40,7 @@ The input is UTF-8 JSONL with one JSON object per line. The default fields match
 
 | `.env` setting | Terminal flag | Purpose |
 | --- | --- | --- |
-| `debug` | | Use `false` for the full batch or `true` to run the longest valid specification. Defaults to `false`. |
+| `debug` | | Use `false` for the full batch or `true` for up to three valid specifications selected by word count. Defaults to `false`. |
 | `PIPELINE_INPUT_JSONL` | | Input dataset. |
 | `PIPELINE_SPEC_FIELD`, `PIPELINE_ID_FIELD` | | Keys for the specification and record ID. The defaults are `question` and `id`. |
 | `PIPELINE_BACKEND` | `--backend` | Select `ollama` or `hosted`. |

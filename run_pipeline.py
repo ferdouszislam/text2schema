@@ -100,7 +100,7 @@ def main(
             output_csv,
             llm,
             extraction_csv=extraction_csv,
-            longest_specification_only=debug,
+            debug_sample=debug,
             max_iterations=max_iterations,
             specification_field=specification_field,
             id_field=id_field,

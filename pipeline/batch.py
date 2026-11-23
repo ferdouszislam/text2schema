@@ -1,6 +1,6 @@
 """Run the pipeline for each JSONL specification and write CSV traces."""
 
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Iterator
 import csv
 import json
 from pathlib import Path
@@ -57,21 +57,33 @@ def _read_specification(record, specification_field):
     return specification
 
 
-def _longest_record(records: Iterable[tuple[int, str]], specification_field: str) -> tuple[int, str]:
-    longest = None
-    max_words = 0
+def _records_with_word_counts(
+    records: Iterable[tuple[int, str]], specification_field: str,
+) -> Iterator[tuple[int, int, str]]:
     for line_number, line in records:
         try:
             specification = _read_specification(_parse_record(line), specification_field)
         except ValueError:
             continue
-        words = len(specification.split())
-        if words > max_words:
-            longest = line_number, line
-            max_words = words
+        yield len(specification.split()), line_number, line
+
+
+def _select_records_by_word_count(
+    records: Iterable[tuple[int, str]], specification_field: str, *, longest_only: bool,
+) -> list[tuple[int, str]]:
+    candidates = _records_with_word_counts(records, specification_field)
+    ranked = [] if longest_only else sorted(candidates)
+    longest = max(candidates if longest_only else ranked, key=lambda record: record[0], default=None)
     if longest is None:
         raise ValueError(f"Input JSONL contains no nonempty specifications in field {specification_field!r}.")
-    return longest
+
+    selected = [longest]
+    if len(ranked) > 1:
+        ranked.remove(longest)
+        selected.append(ranked.pop(0))
+        if ranked:
+            selected.append(ranked[len(ranked) // 2])
+    return [(line_number, line) for _, line_number, line in selected]
 
 
 def _run_record(line, line_number, writers, llm, specification_field, id_field, pipeline_options):
@@ -128,13 +140,14 @@ def run_batch(
     *,
     extraction_csv: str | Path | None = None,
     longest_specification_only: bool = False,
+    debug_sample: bool = False,
     max_iterations: int = DEFAULT_MAX_ITERATIONS,
     specification_field: str = "question",
     id_field: str = "id",
     extraction_prompt: str | None = None,
     schema_prompt: str | None = None,
 ) -> dict[str, int]:
-    """Process nonblank JSONL lines in input order and publish two UTF-8 CSVs.
+    """Process JSONL specifications and publish two UTF-8 CSVs.
 
     The specification field contains the input text. The optional ID field
     supplies the source identifier, with ``line-N`` used when it is missing.
@@ -144,8 +157,10 @@ def run_batch(
     If omitted, ``extraction_csv`` defaults to ``extraction_<output name>``
     beside the results CSV. Both files are staged before publication. The
     return value counts records, verified schemas, exhausted records, and errors.
-    With ``longest_specification_only``, process only the first record with
-    the maximum whitespace-separated word count in a valid specification.
+    By default, process nonblank JSONL lines in input order. With ``debug_sample``,
+    select up to three valid records in longest, shortest, and upper-middle order
+    by whitespace-separated word count. With ``longest_specification_only`` alone,
+    select only the first valid record with the maximum word count.
     """
     validate_iteration_limit(max_iterations)
     extraction_prompt, schema_prompt = load_prompts(extraction_prompt, schema_prompt)
@@ -167,8 +182,8 @@ def run_batch(
     counts = {"records": 0, "verified": 0, "exhausted": 0, "errors": 0}
     with source_path.open(encoding="utf-8-sig") as source:
         records: Iterable[tuple[int, str]] = enumerate(source, start=1)
-        if longest_specification_only:
-            records = (_longest_record(records, specification_field),)
+        if debug_sample or longest_specification_only:
+            records = _select_records_by_word_count(records, specification_field, longest_only=not debug_sample)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         extraction_path.parent.mkdir(parents=True, exist_ok=True)
         with (TemporaryDirectory(dir=output_path.parent) as results_dir,

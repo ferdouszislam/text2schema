@@ -49,7 +49,7 @@ test -f .env || cp .env.example .env
 nano .env
 ```
 
-Set `debug=true` in `.env` for the first job. Set it back to `debug=false` before submitting the full run. The example configuration points to the 375-record cleaned RSchema dataset and the two prompt files included in the clone. It allows up to three schema proposals per record and sets a 120-second timeout per model request. [Example configuration](.env.example) · [Pipeline documentation](pipeline/README.md)
+Set `debug=true` in `.env` for the first job. Set it back to `debug=false` before submitting the full run. The example configuration points to the 375-record cleaned RSchema dataset and the two prompt files included in the clone. It allows up to three schema proposals per record and sets a 300-second timeout per model request. [Example configuration](.env.example) · [Pipeline documentation](pipeline/README.md)
 
 Leave the API key blank. `run_fir.slurm` supplies the Ollama backend, the model tag for each run, and the loopback endpoint. The job reads the dataset, prompts, retry limit, timeout, and debug setting from `.env`.
 
@@ -96,11 +96,11 @@ Allow more than 40 GB of free scratch space for the model cache. The job pulls m
 
 Replace `YOUR_FIR_GPU_ACCOUNT` with the Slurm account for your Fir GPU project. To see your account associations, run `sshare -U -u "$USER" -P -o Account,User`. The project group name is also listed in CCDB under **My Projects → My Resources and Allocations**. [Alliance Slurm account guide](https://ualberta-rcg.github.io/ragflow-wiki-data/base/running-jobs/running_jobs/#accounts-and-projects)
 
-For the first debug run, use `debug=true` and allow two hours, including the model downloads. Debug mode runs up to three specifications per model. For a repeat debug run with cached models, use `--time=01:30:00`.
+For the first debug run, use `debug=true` and request four hours. Debug mode runs up to three specifications per model. Across all three models, the pipeline can make up to 36 requests. If each takes close to five minutes, that uses about three hours, leaving time for server startup and downloads.
 
 ```bash
 cd "$SCRATCH/text2schema"
-sbatch --account=YOUR_FIR_GPU_ACCOUNT --time=02:00:00 run_fir.slurm
+sbatch --account=YOUR_FIR_GPU_ACCOUNT --time=04:00:00 run_fir.slurm
 ```
 
 For the full run, set `debug=false` and submit using the script's default three-day wall time. You can override it with `--time` if needed.

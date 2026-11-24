@@ -11,7 +11,7 @@ from time import monotonic
 
 from dotenv import dotenv_values
 
-from pipeline.batch import default_extraction_csv, run_batch
+from pipeline.batch import count_input_records, default_extraction_csv, run_batch, validate_record_range
 from pipeline.llm import DEFAULT_HOSTED_503_RETRIES, LLMClient
 
 
@@ -26,6 +26,28 @@ def _required(settings: dict[str, str | None], key: str) -> str:
     return value.strip()
 
 
+def _read_settings(config_path: str | Path | None) -> dict[str, str | None]:
+    settings_path = _ROOT / ".env" if config_path is None else Path(config_path)
+    with settings_path.open(encoding="utf-8") as config:
+        return dotenv_values(stream=config, interpolate=False)
+
+
+def _debug_enabled(settings: dict[str, str | None]) -> bool:
+    debug_setting = (settings.get("debug", "false") or "").strip().lower()
+    if debug_setting not in ("true", "false"):
+        raise ValueError("Set debug to true or false in .env.")
+    return debug_setting == "true"
+
+
+def configured_input_record_count(config_path: str | Path | None = None) -> int:
+    """Count the nonblank records in the configured input for a ranged run."""
+    settings = _read_settings(config_path)
+    if _debug_enabled(settings):
+        raise ValueError("Set debug=false in .env before running with record indexes.")
+    input_jsonl = _ROOT / _required(settings, "PIPELINE_INPUT_JSONL")
+    return count_input_records(input_jsonl)
+
+
 def _read_prompt(path: Path) -> str:
     prompt = path.read_text(encoding="utf-8")
     if not prompt.strip():
@@ -33,17 +55,20 @@ def _read_prompt(path: Path) -> str:
     return prompt
 
 
-def _create_run_directory(model: str, *, debug: bool) -> Path:
+def _create_run_directory(
+    model: str, *, debug: bool, record_range: tuple[int, int] | None = None,
+) -> Path:
     results_root = _ROOT / "pipeline" / "results"
     if debug:
         results_root /= "debug"
     results_root.mkdir(parents=True, exist_ok=True)
     model_name = re.sub(r"[^A-Za-z0-9._-]", "-", model).strip(".") or "model"
+    range_suffix = "" if record_range is None else f"-{record_range[0]}_{record_range[1]}"
     # Reserve the debug parent even before the first debug run.
-    suffix = 1 if not debug and model_name.lower() == "debug" else 0
+    suffix = 1 if not debug and not range_suffix and model_name.lower() == "debug" else 0
     while True:
         name = model_name if suffix == 0 else f"{model_name}-{suffix}"
-        directory = results_root / name
+        directory = results_root / f"{name}{range_suffix}"
         try:
             directory.mkdir()
         except FileExistsError:
@@ -56,21 +81,21 @@ def main(
     config_path: str | Path | None = None,
     *,
     model_overrides: dict[str, str] | None = None,
+    start_index: int | None = None,
+    end_index: int | None = None,
 ) -> int:
     """Run with root-relative paths and return a process exit status."""
-    settings_path = _ROOT / ".env" if config_path is None else Path(config_path)
     api_key = None
     run_directory = None
     try:
-        with settings_path.open(encoding="utf-8") as config:
-            settings = dotenv_values(stream=config, interpolate=False)
+        record_range = validate_record_range(start_index, end_index)
+        settings = _read_settings(config_path)
         if model_overrides is not None:
             settings.update(model_overrides)
         api_key = settings.get("PIPELINE_API_KEY") or None
-        debug_setting = (settings.get("debug", "false") or "").strip().lower()
-        if debug_setting not in ("true", "false"):
-            raise ValueError("Set debug to true or false in .env.")
-        debug = debug_setting == "true"
+        debug = _debug_enabled(settings)
+        if debug and record_range is not None:
+            raise ValueError("Set debug=false in .env before running with record indexes.")
 
         input_jsonl = _ROOT / _required(settings, "PIPELINE_INPUT_JSONL")
         specification_field = _required(settings, "PIPELINE_SPEC_FIELD")
@@ -111,7 +136,7 @@ def main(
             model, backend=backend, api_key=api_key, api_base=api_base, timeout=timeout,
             request_delay_seconds=request_delay, hosted_503_retries=hosted_503_retries,
         )
-        run_directory = _create_run_directory(model, debug=debug)
+        run_directory = _create_run_directory(model, debug=debug, record_range=record_range)
         output_csv = run_directory / "results.csv"
         extraction_csv = default_extraction_csv(output_csv)
         _LOGGER.info(
@@ -127,6 +152,8 @@ def main(
             llm,
             extraction_csv=extraction_csv,
             debug_sample=debug,
+            start_index=start_index,
+            end_index=end_index,
             max_iterations=max_iterations,
             specification_field=specification_field,
             id_field=id_field,
@@ -170,14 +197,20 @@ if __name__ == "__main__":
                         help="Retries per hosted request after HTTP 503. Defaults to 2 if unset in .env.")
     parser.add_argument("--max-iterations", dest="PIPELINE_MAX_ITERATIONS", metavar="COUNT",
                         help="Maximum schema proposals per specification.")
+    parser.add_argument("--start-index", type=int, metavar="INDEX",
+                        help="First nonblank record (1-based, inclusive). Requires --end-index.")
+    parser.add_argument("--end-index", type=int, metavar="INDEX",
+                        help="Last nonblank record (1-based, inclusive). Requires --start-index.")
     model_overrides = vars(parser.parse_args())
+    start_index = model_overrides.pop("start_index", None)
+    end_index = model_overrides.pop("end_index", None)
     progress_handler = logging.StreamHandler()
     progress_handler.setFormatter(logging.Formatter("[%(asctime)s] %(message)s", "%Y-%m-%dT%H:%M:%S%z"))
     previous_level = _LOGGER.level
     _LOGGER.setLevel(logging.INFO)
     _LOGGER.addHandler(progress_handler)
     try:
-        raise SystemExit(main(model_overrides=model_overrides))
+        raise SystemExit(main(model_overrides=model_overrides, start_index=start_index, end_index=end_index))
     finally:
         _LOGGER.removeHandler(progress_handler)
         _LOGGER.setLevel(previous_level)

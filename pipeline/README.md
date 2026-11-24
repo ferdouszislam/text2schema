@@ -22,9 +22,19 @@ python run_pipeline.py --backend ollama --model qwen3:8b --timeout-seconds 60 --
 
 Pass `--api-key ""` or `--api-base ""` to clear a configured key or endpoint. Run `python run_pipeline.py --help` to list the available flags.
 
+### Run an inclusive range of records
+
+Set `debug=false` and pass both bounds from the terminal.
+
+```bash
+python run_pipeline.py --start-index 1 --end-index 94
+```
+
+Indices start at 1 and count nonblank JSONL records in input order. The first and last records are included, and both reports retain the source `spec_id` and `input_line`. Both bounds must be within the dataset, and the start must be at or before the end. Omit both flags to run the configured full batch or debug sample.
+
 ### Debug with up to three records
 
-Set `debug=true` in the root `.env` and run the same command.
+Set `debug=true` in the root `.env` and omit the range flags.
 
 ```bash
 python run_pipeline.py
@@ -68,6 +78,8 @@ Edit the selected prompt files to change the model instructions. The pipeline fi
 Full runs save both CSVs under `pipeline/results/<model-name>/`, replacing characters such as `/` and `:` in the selected model name with hyphens. For example, `qwen3:8b` first uses `pipeline/results/qwen3-8b/`. If that folder exists, the launcher tries `pipeline/results/qwen3-8b-1/`, `pipeline/results/qwen3-8b-2/`, and so on until it finds an unused name. Debug runs use their own numbered folders under `pipeline/results/debug/`.
 
 For a model named `debug` in any capitalization, full runs start at suffix `-1` because `pipeline/results/debug/` holds debug runs.
+
+Range runs end their folder name with the inclusive bounds, such as `pipeline/results/qwen3-8b-1_94/`. If the folder already exists, the launcher puts the run counter before the bounds, as in `pipeline/results/qwen3-8b-1-1_94/`.
 
 - `results.csv` records extraction at iteration `0`, schema proposals from iteration `1` onward, and any record-level errors. Schema rows include reported token counts, feedback, and any generated SQL in `create_queries`. Two consecutive rejected proposals with identical raw model responses and feedback end the record with `early-stop` on the second proposal.
 - `extraction_results.csv` records extraction attempts, including the attribute names, SQLite types, FDs, and reported extraction token counts.

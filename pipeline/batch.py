@@ -59,6 +59,45 @@ def _read_specification(record, specification_field):
     return specification
 
 
+def _nonblank_records(source: Iterable[str]) -> Iterator[tuple[int, str]]:
+    for line_number, line in enumerate(source, start=1):
+        if line.strip():
+            yield line_number, line
+
+
+def count_input_records(input_jsonl: str | Path) -> int:
+    """Count the nonblank input records, including malformed records."""
+    with Path(input_jsonl).open(encoding="utf-8-sig") as source:
+        return sum(1 for _ in _nonblank_records(source))
+
+
+def validate_record_range(start_index: int | None, end_index: int | None) -> tuple[int, int] | None:
+    """Validate and return paired inclusive nonblank input indexes."""
+    if start_index is None and end_index is None:
+        return None
+    if start_index is None or end_index is None:
+        raise ValueError("Provide --start-index and --end-index together.")
+    if type(start_index) is not int or type(end_index) is not int or min(start_index, end_index) < 1:
+        raise ValueError("--start-index and --end-index must be positive integers.")
+    if start_index > end_index:
+        raise ValueError("--start-index must be less than or equal to --end-index.")
+    return start_index, end_index
+
+
+def _select_record_range(
+    records: Iterable[tuple[int, str]], start_index: int, end_index: int,
+) -> list[tuple[int, str]]:
+    selected = []
+    index = 0
+    for index, record in enumerate(records, start=1):
+        if index < start_index:
+            continue
+        selected.append(record)
+        if index == end_index:
+            return selected
+    raise ValueError(f"--end-index {end_index} exceeds the number of nonblank input records ({index}).")
+
+
 def _records_with_word_counts(
     records: Iterable[tuple[int, str]], specification_field: str,
 ) -> Iterator[tuple[int, int, str]]:
@@ -144,6 +183,8 @@ def run_batch(
     extraction_csv: str | Path | None = None,
     longest_specification_only: bool = False,
     debug_sample: bool = False,
+    start_index: int | None = None,
+    end_index: int | None = None,
     max_iterations: int = DEFAULT_MAX_ITERATIONS,
     specification_field: str = "question",
     id_field: str = "id",
@@ -161,12 +202,18 @@ def run_batch(
     beside the results CSV. Both files are staged before publication. The
     return value counts records, verified schemas, exhausted records, early
     stops (``early-stop``), and errors.
-    By default, process nonblank JSONL lines in input order. With ``debug_sample``,
-    select up to three valid records in longest, shortest, and upper-middle order
-    by whitespace-separated word count. With ``longest_specification_only`` alone,
-    select only the first valid record with the maximum word count.
+    By default, process nonblank JSONL lines in input order. Provide both
+    ``start_index`` and ``end_index`` to select a 1-based inclusive range of
+    nonblank lines while preserving the original physical line numbers.
+    With ``debug_sample``, select up to three valid records in longest, shortest,
+    and upper-middle order by whitespace-separated word count. With
+    ``longest_specification_only`` alone, select only the first valid record
+    with the maximum word count.
     """
     validate_iteration_limit(max_iterations)
+    record_range = validate_record_range(start_index, end_index)
+    if record_range is not None and (debug_sample or longest_specification_only):
+        raise ValueError("Record ranges cannot be combined with sampling.")
     extraction_prompt, schema_prompt = load_prompts(extraction_prompt, schema_prompt)
     pipeline_options = {
         "max_iterations": max_iterations,
@@ -185,7 +232,10 @@ def run_batch(
 
     counts = {"records": 0, "verified": 0, "exhausted": 0, "early-stop": 0, "errors": 0}
     with source_path.open(encoding="utf-8-sig") as source:
-        records: Iterable[tuple[int, str]] = enumerate(source, start=1)
+        records: Iterable[tuple[int, str]] = _nonblank_records(source)
+        if record_range is not None:
+            records = _select_record_range(records, *record_range)
+            _LOGGER.info("Selected nonblank input records %d-%d", *record_range)
         if debug_sample or longest_specification_only:
             records = _select_records_by_word_count(records, specification_field, longest_only=not debug_sample)
             _LOGGER.info("Selected %d record(s) by specification length", len(records))
@@ -205,8 +255,6 @@ def run_batch(
                 for writer in writers:
                     writer.writeheader()
                 for line_number, line in records:
-                    if not line.strip():
-                        continue
                     _LOGGER.info("Processing record %d (input line %d)", counts["records"] + 1, line_number)
                     status = _run_record(line, line_number, writers, llm, specification_field, id_field, pipeline_options)
                     counts["records"] += 1

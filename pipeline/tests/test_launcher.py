@@ -190,6 +190,74 @@ class LauncherTests(unittest.TestCase):
                 self.assertEqual([row["spec_id"] for row in self.read_csv(report_dir / self.extraction.name)],
                                  ["first", "second"])
 
+    def test_cli_range_counts_nonblank_records_and_keeps_original_line_numbers(self):
+        self.configure()
+        specification = "A determines B and B determines C."
+        self.write_records(
+            "", {"case": "before", "requirements": specification}, "  ",
+            {"case": "first", "requirements": specification}, "", "{malformed",
+            {"case": "last", "requirements": specification},
+            {"case": "after", "requirements": specification},
+        )
+        script = self.copy_launcher()
+        args = [str(script), "--start-index", "2", "--end-index", "4"]
+        expected_results = [
+            ("first", "4", "extraction"), ("first", "4", "schema"),
+            ("line-6", "6", "input"),
+            ("last", "7", "extraction"), ("last", "7", "schema"),
+        ]
+        for folder in ("test-model-2_4", "test-model-1-2_4"):
+            llm = Mock(side_effect=[EXTRACTION, VERIFIED_SCHEMA] * 2)
+            with (patch("pipeline.llm.LLMClient", return_value=llm),
+                  patch.object(sys, "argv", args), redirect_stdout(StringIO()),
+                  self.assertRaises(SystemExit) as exited):
+                runpy.run_path(str(script), run_name="__main__")
+
+            self.assertEqual(exited.exception.code, 1)
+            self.assertEqual(llm.call_count, 4)
+            report_dir = self.report_root / folder
+            rows = self.read_csv(report_dir / self.results.name)
+            self.assertEqual([(row["spec_id"], row["input_line"], row["stage"]) for row in rows],
+                             expected_results)
+            extractions = self.read_csv(report_dir / self.extraction.name)
+            self.assertEqual([(row["spec_id"], row["input_line"]) for row in extractions],
+                             [("first", "4"), ("last", "7")])
+        self.assertCountEqual([path.name for path in self.report_root.iterdir()],
+                              ["test-model-2_4", "test-model-1-2_4"])
+
+    def test_cli_rejects_invalid_ranges_before_any_model_requests(self):
+        script = self.copy_launcher()
+        cases = (
+            (["--start-index", "1"], None, "together"),
+            (["--end-index", "2"], None, "together"),
+            (["--start-index", "0", "--end-index", "2"], None, "positive integers"),
+            (["--start-index", "3", "--end-index", "2"], None, "less than or equal"),
+            (["--start-index", "1", "--end-index", "3"], None, "nonblank input records (2)"),
+            (["--start-index", "1", "--end-index", "2"], "true", "debug=false"),
+        )
+        for flags, debug, message in cases:
+            error = StringIO()
+            self.configure(debug=debug)
+            with (self.subTest(flags=flags, debug=debug),
+                  patch("pipeline.llm.LLMClient") as model,
+                  patch.object(sys, "argv", [str(script), *flags]), redirect_stderr(error)):
+                with self.assertRaises(SystemExit) as exited:
+                    runpy.run_path(str(script), run_name="__main__")
+
+                self.assertEqual(exited.exception.code, 2)
+                model.return_value.assert_not_called()
+                self.assertIn(message, error.getvalue())
+                self.assertEqual(list(self.report_root.glob("*")), [])
+
+    def test_configured_record_count_uses_nonblank_lines_and_rejects_debug(self):
+        self.write_records("", "{malformed", "  ", {"case": "valid", "requirements": "A database."})
+        self.configure()
+        with patch.object(launcher, "_ROOT", self.directory):
+            self.assertEqual(launcher.configured_input_record_count(), 2)
+            self.configure(debug=" TrUe ")
+            with self.assertRaisesRegex(ValueError, "debug=false"):
+                launcher.configured_input_record_count()
+
     def test_debug_parent_is_reserved_for_case_insensitive_model_names(self):
         with patch.object(launcher, "_ROOT", self.directory):
             full_run = launcher._create_run_directory("Debug", debug=False)

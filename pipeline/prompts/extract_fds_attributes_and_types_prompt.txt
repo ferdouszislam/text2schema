@@ -12,6 +12,7 @@ Return one valid JSON object with exactly the following two keys.
   capitalization from attribute_types. Put square brackets around each side, separate multiple
   attributes with commas, and use the ASCII arrow ->, as in "[A, B] -> [C, D]".
   Use "[] -> [A]" for a constant. The right-hand side must contain at least one attribute.
+  If a relationship has no dependent attributes, omit that FD and keep its attributes in attribute_types.
   Use an empty array [] if the specification implies no FDs.
 
 Start the response with { and end with }. Use double quotes for keys and strings.

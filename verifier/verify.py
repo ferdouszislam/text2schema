@@ -23,8 +23,14 @@ class _Dependency:
 def parse_functional_dependencies(
     dependency_lines: Sequence[str] | str,
     attributes: set[str],
+    *,
+    omit_empty_rhs: bool = False,
 ) -> list[_Dependency]:
-    """Parse FD syntax and check all references against the given attributes."""
+    """Parse FDs and validate all attribute references.
+
+    With ``omit_empty_rhs``, skip vacuous FDs with an empty right-hand side
+    after validating their left-hand side.
+    """
     if isinstance(dependency_lines, str):
         dependency_lines = dependency_lines.splitlines()
     if not isinstance(dependency_lines, Sequence):
@@ -44,10 +50,14 @@ def parse_functional_dependencies(
         left = []
         if match[1].strip():
             left = [parse_identifier(item, location) for item in match[1].split(",")]
-        right = [parse_identifier(item, location) for item in match[2].split(",")]
+        right = []
+        if match[2].strip() or not omit_empty_rhs:
+            right = [parse_identifier(item, location) for item in match[2].split(",")]
         unknown = set(left + right) - attributes
         if unknown:
             raise ValueError(f"{location}: unknown attributes {_display(unknown)} in {line!r}.")
+        if not right:
+            continue
         dependencies.append(_Dependency(
             frozenset(left),
             frozenset(right),

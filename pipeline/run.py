@@ -96,7 +96,7 @@ def _extract(response):
         dependencies = data["functional_dependencies"]
         if not isinstance(dependencies, list):
             raise ValueError("functional_dependencies must be a list of FD strings.")
-        parsed = parse_functional_dependencies(dependencies, attributes)
+        parsed = parse_functional_dependencies(dependencies, attributes, omit_empty_rhs=True)
         return types, tuple(dependency.source for dependency in parsed)
     except ValueError as error:
         raise ExtractionError(f"Invalid LLM extraction. {error}") from None

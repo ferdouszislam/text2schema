@@ -179,12 +179,35 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(events[-1]["status"], "error")
         self.assertEqual(events[-1]["create_queries"], generate_create_queries(VERIFIED_SCHEMA, ATTRIBUTE_TYPES))
 
+    def test_extraction_omits_empty_right_hand_sides(self):
+        response = json.dumps({
+            "attribute_types": ATTRIBUTE_TYPES,
+            "functional_dependencies": [DEPENDENCIES[0], "[A, Notes] -> []", "[A] -> [ ]", DEPENDENCIES[1]],
+        })
+        llm = ScriptedLLM(response, VERIFIED_SCHEMA)
+        events = []
+
+        result = run_pipeline(SPECIFICATION, llm, on_event=events.append)
+
+        self.assertTrue(result["verified"])
+        self.assertEqual(result["attribute_types"], ATTRIBUTE_TYPES)
+        self.assertEqual(result["functional_dependencies"], DEPENDENCIES)
+        self.assertEqual(events[0]["model_response"], response)
+        self.assertEqual(events[0]["functional_dependencies"], DEPENDENCIES)
+        self.assertEqual(self.user_payload(llm.calls[1])["functional_dependencies"], DEPENDENCIES)
+
     def test_invalid_extraction_does_not_start_schema_generation(self):
         invalid_responses = (
             "This is not JSON",
             json.dumps({"attribute_types": ATTRIBUTE_TYPES}),
             json.dumps({"attribute_types": ATTRIBUTE_TYPES,
                         "functional_dependencies": ["[A] -> [Unknown]"]}),
+            json.dumps({"attribute_types": ATTRIBUTE_TYPES,
+                        "functional_dependencies": ["[Unknown] -> []"]}),
+            json.dumps({"attribute_types": ATTRIBUTE_TYPES,
+                        "functional_dependencies": ["[A,] -> []"]}),
+            json.dumps({"attribute_types": ATTRIBUTE_TYPES,
+                        "functional_dependencies": ["[A] -> [,]"]}),
             json.dumps({"attribute_types": {"A": "TEXT NOT NULL"},
                         "functional_dependencies": []}),
         )

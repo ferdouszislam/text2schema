@@ -160,6 +160,18 @@ class LauncherTests(unittest.TestCase):
         self.assertTrue((debug_dir / self.extraction.name).is_file())
         self.assertEqual(previous_results.read_bytes(), b"prior debug results\n")
 
+    def test_launcher_reports_early_stop_with_an_unverified_exit_code(self):
+        self.configure(max_iterations=4)
+        self.write_records({"case": "repeated", "requirements": "A determines B and B determines C."})
+        llm = Mock(side_effect=[EXTRACTION, FAILING_SCHEMA, FAILING_SCHEMA])
+        stdout = StringIO()
+        with (patch.object(launcher, "_ROOT", self.directory),
+              patch.object(launcher, "LLMClient", return_value=llm), redirect_stdout(stdout)):
+            exit_code = launcher.main()
+
+        self.assertEqual(exit_code, 1)
+        self.assertIn("1 early-stop", stdout.getvalue())
+
     def test_normal_launcher_processes_every_record_in_numbered_run_directories(self):
         for debug, folder in ((None, "test-model"), ("FaLsE", "test-model-1"), ("false", "test-model-2")):
             with self.subTest(debug=debug, folder=folder):
@@ -254,7 +266,7 @@ class LauncherTests(unittest.TestCase):
                 "test-model",
             ),
         ]
-        batch_results = {"records": 1, "verified": 1, "exhausted": 0, "errors": 0}
+        batch_results = {"records": 1, "verified": 1, "exhausted": 0, "early-stop": 0, "errors": 0}
         for args, expected, folder in cases:
             model, backend, api_key, api_base, timeout, max_iterations, hosted_503_retries = expected
             with (self.subTest(args=args), patch("pipeline.llm.LLMClient") as client,

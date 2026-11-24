@@ -110,7 +110,7 @@ def _run_record(line, line_number, writers, llm, specification_field, id_field, 
     except (ExtractionError, RuntimeError):
         # The pipeline has already emitted an event for the failed stage.
         return "errors"
-    return "verified" if result["verified"] else "exhausted"
+    return result["status"]
 
 
 def default_extraction_csv(output_csv: str | Path) -> Path:
@@ -159,7 +159,8 @@ def run_batch(
     extraction CSV records only the extraction stages and their token counts.
     If omitted, ``extraction_csv`` defaults to ``extraction_<output name>``
     beside the results CSV. Both files are staged before publication. The
-    return value counts records, verified schemas, exhausted records, and errors.
+    return value counts records, verified schemas, exhausted records, early
+    stops (``early-stop``), and errors.
     By default, process nonblank JSONL lines in input order. With ``debug_sample``,
     select up to three valid records in longest, shortest, and upper-middle order
     by whitespace-separated word count. With ``longest_specification_only`` alone,
@@ -182,7 +183,7 @@ def run_batch(
         if path.exists() and not path.is_file():
             raise ValueError(f"Output CSV path is not a file: {path}")
 
-    counts = {"records": 0, "verified": 0, "exhausted": 0, "errors": 0}
+    counts = {"records": 0, "verified": 0, "exhausted": 0, "early-stop": 0, "errors": 0}
     with source_path.open(encoding="utf-8-sig") as source:
         records: Iterable[tuple[int, str]] = enumerate(source, start=1)
         if debug_sample or longest_specification_only:

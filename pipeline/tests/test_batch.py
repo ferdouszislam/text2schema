@@ -58,9 +58,9 @@ class BatchTests(unittest.TestCase):
     def token_counts(self, row):
         return tuple(row[column] for column in TOKEN_COLUMNS)
 
-    def assert_summary(self, report, *, records, verified, exhausted, errors):
-        counts = ("records", "verified", "exhausted", "errors")
-        self.assertEqual([report[key] for key in counts], [records, verified, exhausted, errors])
+    def assert_summary(self, report, *, records, verified, exhausted, errors, early_stop=0):
+        counts = ("records", "verified", "exhausted", "errors", "early-stop")
+        self.assertEqual([report[key] for key in counts], [records, verified, exhausted, errors, early_stop])
 
     def test_csv_column_order(self):
         self.assertEqual(tuple(CSV_COLUMNS), (
@@ -159,6 +159,22 @@ class BatchTests(unittest.TestCase):
             columns = connection.execute('PRAGMA table_info("Description")').fetchall()
             self.assertEqual([(row[1], row[2], row[5]) for row in columns],
                              [("B", "INTEGER", 1), ("C", "TEXT", 0)])
+
+    def test_batch_reports_early_stop_and_continues_to_the_next_record(self):
+        self.write_input({"id": "repeated", "question": "First specification."},
+                         {"id": "next", "question": "Second specification."})
+        llm = ScriptedLLM(EXTRACTION, FAILING_SCHEMA, FAILING_SCHEMA, EXTRACTION, VERIFIED_SCHEMA)
+
+        report = run_batch(self.source, self.output, llm, max_iterations=4)
+
+        self.assert_summary(report, records=2, verified=1, exhausted=0, errors=0, early_stop=1)
+        rows = self.read_rows()
+        self.assertEqual([(row["spec_id"], row["iteration"], row["status"]) for row in rows], [
+            ("repeated", "0", "extracted"), ("repeated", "1", "rejected"), ("repeated", "2", "early-stop"),
+            ("next", "0", "extracted"), ("next", "1", "verified"),
+        ])
+        self.assertEqual(rows[2]["model_response"], rows[1]["model_response"])
+        self.assertEqual(rows[2]["feedback"], rows[1]["feedback"])
 
     def test_malformed_input_and_model_errors_are_logged_before_batch_continues(self):
         self.write_input(

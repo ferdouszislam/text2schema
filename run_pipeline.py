@@ -146,7 +146,7 @@ def main(
     _LOGGER.info("Batch finished in %.1fs", monotonic() - started_at)
     print(
         f"Processed {results['records']} records with {results['verified']} verified, "
-        f"{results['exhausted']} exhausted, and {results['errors']} errors."
+        f"{results['exhausted']} exhausted, {results['early-stop']} early-stop, and {results['errors']} errors."
     )
     report_title = "Debug reports" if debug else "Reports"
     print(f"{report_title}\n  {output_csv}\n  {extraction_csv}")

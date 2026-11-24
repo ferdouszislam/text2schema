@@ -10,7 +10,7 @@ From the project root, activate `.venv`, install the project requirements, and e
 python run_pipeline.py
 ```
 
-The script prints the batch counts. Exit status `0` means every record verified, `1` means at least one record was exhausted or had an error, and `2` means setup or the batch itself failed.
+The script prints the batch counts. Exit status `0` means every record verified, `1` means at least one record ended with `exhausted`, `early-stop`, or an error, and `2` means setup or the batch itself failed.
 
 ### Override model settings for one run
 
@@ -69,7 +69,7 @@ Full runs save both CSVs under `pipeline/results/<model-name>/`, replacing chara
 
 For a model named `debug` in any capitalization, full runs start at suffix `-1` because `pipeline/results/debug/` holds debug runs.
 
-- `results.csv` records extraction at iteration `0`, schema proposals from iteration `1` onward, and any record-level errors. Schema rows include reported token counts, verification feedback, and any generated SQL in `create_queries`, including for rejected and exhausted proposals.
+- `results.csv` records extraction at iteration `0`, schema proposals from iteration `1` onward, and any record-level errors. Schema rows include reported token counts, feedback, and any generated SQL in `create_queries`. Two consecutive rejected proposals with identical raw model responses and feedback end the record with `early-stop` on the second proposal.
 - `extraction_results.csv` records extraction attempts, including the attribute names, SQLite types, FDs, and reported extraction token counts.
 
 Use `spec_id` and `input_line` to match rows across the reports. Both files record `prompt` as a JSON array of chat messages and `model_response` as raw text. See the detailed guide for field definitions and the Python API. [Pipeline explained](PIPELINE-EXPLAINED.md)

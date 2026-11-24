@@ -163,9 +163,11 @@ def run_pipeline(
     also receive the numbered schema attempts and their feedback in order.
 
     ``max_iterations`` is the positive number of schema proposals permitted,
-    including the initial one. The returned JSON-serializable dictionary has
-    the extraction, each attempted schema with feedback and ``create_queries``,
-    and the final schema with its queries and outcome. The pipeline generates
+    including the initial one. Two consecutive rejected proposals with
+    identical raw responses and feedback end the loop with status ``early-stop``.
+    The returned JSON-serializable dictionary has the extraction, each
+    attempted schema with feedback and ``create_queries``, and the final schema
+    with its queries and status. The pipeline generates
     SQLite DDL whenever the proposal and its available types allow it. A
     successful outcome requires both DDL and passing verification.
     Supply custom instruction text with ``extraction_prompt`` or
@@ -201,6 +203,7 @@ def run_pipeline(
     inputs.update(attributes=attributes, functional_dependencies=dependencies)
 
     attempts = []
+    previous_response_text = None
     for iteration in range(1, max_iterations + 1):
         if attempts:
             inputs["attempt_history"] = [
@@ -231,6 +234,13 @@ def run_pipeline(
             feedback = verification["feedback"]
         if ddl_feedback:
             feedback = f"{feedback}\n{ddl_feedback}".strip()
+        if verified:
+            status = "verified"
+        elif attempts and response.text == previous_response_text and feedback == attempts[-1]["feedback"]:
+            status = "early-stop"
+        else:
+            status = "exhausted" if iteration == max_iterations else "rejected"
+
         attempt = {
             "iteration": iteration,
             "relational_schema": schema,
@@ -239,15 +249,14 @@ def run_pipeline(
             "create_queries": queries,
         }
         attempts.append(attempt)
-        status = "exhausted" if iteration == max_iterations else "rejected"
-        if verified:
-            status = "verified"
         _emit(on_event, "schema", iteration, status, messages, response, started_at=started_at, relational_schema=schema,
               feedback=feedback, verification=verification, create_queries=queries)
-        if verified:
+        if status != "rejected":
             break
+        previous_response_text = response.text
 
     return {
+        "status": status,
         "verified": verified,
         "attribute_types": types,
         "functional_dependencies": list(dependencies),

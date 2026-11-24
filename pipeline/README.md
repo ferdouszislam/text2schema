@@ -1,6 +1,6 @@
 # Text-to-schema pipeline
 
-The pipeline reads database specifications from JSONL, extracts facts, and revises proposed schemas using verification feedback. It generates SQLite `CREATE TABLE` statements for each proposal it can translate and records model prompts, responses, and token usage in two CSVs. [Pipeline explained](PIPELINE-EXPLAINED.md)
+The pipeline reads database specifications from JSONL, extracts facts, and revises proposed schemas using verification feedback. It generates SQLite `CREATE TABLE` statements for each proposal it can translate and records model prompts, responses, token usage, and elapsed times in two CSVs. [Pipeline explained](PIPELINE-EXPLAINED.md)
 
 ## Run the batch
 
@@ -83,5 +83,7 @@ Range runs end their folder name with the inclusive bounds, such as `pipeline/re
 
 - `results.csv` records extraction at iteration `0`, schema proposals from iteration `1` onward, and any record-level errors. Schema rows include reported token counts, feedback, and any generated SQL in `create_queries`. Two consecutive rejected proposals with identical raw model responses and feedback end the record with `early-stop` on the second proposal.
 - `extraction_results.csv` records extraction attempts, including the attribute names, SQLite types, FDs, and reported extraction token counts.
+
+Both reports record elapsed time and LLM request time in seconds. The main report also records time spent validating each schema, generating its `CREATE TABLE` statements, and running the verifier. The last row for each processed specification holds its total pipeline time, including all attempts.
 
 Use `spec_id` and `input_line` to match rows across the reports. Both files record `prompt` as a JSON array of chat messages and `model_response` as raw text. See the detailed guide for field definitions and the Python API. [Pipeline explained](PIPELINE-EXPLAINED.md)

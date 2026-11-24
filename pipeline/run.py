@@ -1,6 +1,7 @@
 """Extract schema facts, refine a relational schema, and produce SQLite DDL."""
 
 from collections.abc import Callable
+from contextlib import contextmanager
 import json
 import logging
 from pathlib import Path
@@ -102,35 +103,50 @@ def _extract(response):
         raise ExtractionError(f"Invalid LLM extraction. {error}") from None
 
 
-def _prepare_candidate(schema, attribute_types):
-    """Return DDL, schema validation feedback, and DDL generation feedback."""
+@contextmanager
+def _measure(timings, field):
+    started_at = monotonic()
     try:
-        _, attributes = parse_relational_schema(schema)
-    except ValueError as error:
-        return [], f"Invalid relational schema. {error}", ""
+        yield
+    finally:
+        timings[field] = monotonic() - started_at
 
-    missing = sorted(attribute_types.keys() - attributes)
-    unexpected = sorted(attributes - attribute_types.keys())
-    schema_feedback = ""
-    if missing or unexpected:
-        schema_feedback = f"Attribute coverage failed. Missing attributes: {missing}. Unexpected attributes: {unexpected}."
-    if unexpected:
-        return [], schema_feedback, ""
+
+def _prepare_candidate(schema, attribute_types, timings):
+    """Return DDL, schema validation feedback, and DDL generation feedback."""
+    with _measure(timings, "schema_validation_seconds"):
+        try:
+            _, attributes = parse_relational_schema(schema)
+        except ValueError as error:
+            return [], f"Invalid relational schema. {error}", ""
+
+        missing = sorted(attribute_types.keys() - attributes)
+        unexpected = sorted(attributes - attribute_types.keys())
+        schema_feedback = ""
+        if missing or unexpected:
+            schema_feedback = f"Attribute coverage failed. Missing attributes: {missing}. Unexpected attributes: {unexpected}."
+        if unexpected:
+            return [], schema_feedback, ""
 
     candidate_types = {name: sql_type for name, sql_type in attribute_types.items() if name in attributes}
     try:
-        queries = generate_create_queries(schema, candidate_types)
+        with _measure(timings, "ddl_generation_seconds"):
+            queries = generate_create_queries(schema, candidate_types)
     except ValueError as error:
         return [], schema_feedback, f"Cannot generate SQLite DDL for this schema. {error}"
     return queries, schema_feedback, ""
 
 
-def _emit(callback, stage, iteration, status, messages, response, *, started_at, **fields):
+def _emit(callback, stage, iteration, status, messages, response, *, started_at, pipeline_started_at=None, **fields):
+    finished_at = monotonic()
+    elapsed_seconds = finished_at - started_at
     _LOGGER.info(
         "%s finished (iteration=%d, status=%s, elapsed=%.1fs)",
-        stage.capitalize(), iteration, status, monotonic() - started_at,
+        stage.capitalize(), iteration, status, elapsed_seconds,
     )
     if callback is not None:
+        if pipeline_started_at is not None:
+            fields["pipeline_total_seconds"] = finished_at - pipeline_started_at
         callback({
             "stage": stage,
             "iteration": iteration,
@@ -140,6 +156,7 @@ def _emit(callback, stage, iteration, status, messages, response, *, started_at,
             "input_tokens": response.input_tokens if response is not None else None,
             "output_tokens": response.output_tokens if response is not None else None,
             "total_tokens": response.total_tokens if response is not None else None,
+            "elapsed_seconds": elapsed_seconds,
             **fields,
         })
 
@@ -174,7 +191,9 @@ def run_pipeline(
     ``schema_prompt``. ``on_event``, if provided, receives a dictionary for
     extraction (iteration zero) and for each schema proposal, with status,
     submitted messages, raw model response, available token counts, and
-    the parsed results or feedback.
+    the parsed results or feedback. Events include stage and model request
+    durations in seconds. Schema events also report the local steps that ran,
+    and the last event includes the total time for the specification.
     Invalid extraction raises ``ExtractionError``. Model and solver errors
     propagate to the caller.
     """
@@ -185,21 +204,25 @@ def run_pipeline(
     if isinstance(llm, LLMClient):
         llm = llm.complete
 
+    pipeline_started_at = monotonic()
     inputs = {"database_specification": database_specification}
     messages = _messages(extraction_prompt, inputs)
     response = None
+    timings = {}
     _LOGGER.info("Starting extraction request")
     started_at = monotonic()
     try:
-        response = _request(llm, messages)
+        with _measure(timings, "llm_seconds"):
+            response = _request(llm, messages)
         types, dependencies = _extract(response.text)
     except (ExtractionError, RuntimeError) as error:
-        _emit(on_event, "extraction", 0, "error", messages, response, started_at=started_at, feedback=str(error))
+        _emit(on_event, "extraction", 0, "error", messages, response, started_at=started_at,
+              pipeline_started_at=pipeline_started_at, feedback=str(error), **timings)
         raise
 
     attributes = list(types)
     _emit(on_event, "extraction", 0, "extracted", messages, response, started_at=started_at, attributes=attributes,
-          attribute_types=types, functional_dependencies=list(dependencies))
+          attribute_types=types, functional_dependencies=list(dependencies), **timings)
     inputs.update(attributes=attributes, functional_dependencies=dependencies)
 
     attempts = []
@@ -218,16 +241,22 @@ def run_pipeline(
         response = None
         schema = ""
         queries = None
+        timings = {}
         _LOGGER.info("Starting schema attempt %d/%d", iteration, max_iterations)
         started_at = monotonic()
         try:
-            response = _request(llm, messages)
+            with _measure(timings, "llm_seconds"):
+                response = _request(llm, messages)
             schema = _unwrap(response.text)
-            queries, feedback, ddl_feedback = _prepare_candidate(schema, types)
-            verification = None if feedback else verify_schema(schema, dependencies)
+            queries, feedback, ddl_feedback = _prepare_candidate(schema, types, timings)
+            verification = None
+            if not feedback:
+                with _measure(timings, "verification_seconds"):
+                    verification = verify_schema(schema, dependencies)
         except RuntimeError as error:
             _emit(on_event, "schema", iteration, "error", messages, response,
-                  started_at=started_at, relational_schema=schema, feedback=str(error), create_queries=queries)
+                  started_at=started_at, pipeline_started_at=pipeline_started_at,
+                  relational_schema=schema, feedback=str(error), create_queries=queries, **timings)
             raise
         verified = bool(verification and verification["verified"] and queries)
         if verification is not None and (not ddl_feedback or not verification["verified"]):
@@ -249,8 +278,10 @@ def run_pipeline(
             "create_queries": queries,
         }
         attempts.append(attempt)
-        _emit(on_event, "schema", iteration, status, messages, response, started_at=started_at, relational_schema=schema,
-              feedback=feedback, verification=verification, create_queries=queries)
+        _emit(on_event, "schema", iteration, status, messages, response,
+              started_at=started_at, pipeline_started_at=pipeline_started_at if status != "rejected" else None,
+              relational_schema=schema,
+              feedback=feedback, verification=verification, create_queries=queries, **timings)
         if status != "rejected":
             break
         previous_response_text = response.text

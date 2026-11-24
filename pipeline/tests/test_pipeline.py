@@ -7,6 +7,7 @@ from unittest.mock import patch
 from create_query_generator.create_query_generator import generate_create_queries
 from pipeline.llm import LLMResponse
 from pipeline.run import ExtractionError, run_pipeline
+from util.relational_schema import parse_relational_schema
 from verifier.verify import verify_schema
 
 
@@ -233,6 +234,39 @@ class PipelineTests(unittest.TestCase):
 
         self.assertEqual(events[-1]["status"], "error")
         self.assertEqual(events[-1]["create_queries"], generate_create_queries(VERIFIED_SCHEMA, ATTRIBUTE_TYPES))
+        self.assertGreaterEqual(events[-1]["verification_seconds"], 0)
+        self.assertGreaterEqual(events[-1]["pipeline_total_seconds"], events[-1]["elapsed_seconds"])
+
+    def test_stage_and_specification_timers_measure_wall_time(self):
+        llm = ScriptedLLM(EXTRACTION, VERIFIED_SCHEMA)
+        events = []
+        now = 100.0
+
+        def takes(seconds, operation):
+            def run(*args):
+                nonlocal now
+                now += seconds
+                return operation(*args)
+            return run
+
+        with (
+            patch("pipeline.run.monotonic", side_effect=lambda: now),
+            patch("pipeline.run.parse_relational_schema", side_effect=takes(1, parse_relational_schema)),
+            patch("pipeline.run.generate_create_queries", side_effect=takes(2, generate_create_queries)),
+            patch("pipeline.run.verify_schema", side_effect=takes(3, verify_schema)),
+        ):
+            run_pipeline(SPECIFICATION, takes(5, llm), on_event=takes(0.5, events.append))
+
+        extraction, schema = events
+        self.assertEqual(extraction["llm_seconds"], 5)
+        self.assertEqual(extraction["elapsed_seconds"], 5)
+        self.assertNotIn("pipeline_total_seconds", extraction)
+        self.assertEqual(schema["llm_seconds"], 5)
+        self.assertEqual(schema["schema_validation_seconds"], 1)
+        self.assertEqual(schema["ddl_generation_seconds"], 2)
+        self.assertEqual(schema["verification_seconds"], 3)
+        self.assertEqual(schema["elapsed_seconds"], 11)
+        self.assertEqual(schema["pipeline_total_seconds"], 16.5)
 
     def test_extraction_omits_empty_right_hand_sides(self):
         response = json.dumps({

@@ -20,6 +20,9 @@ EXTRACTION = json.dumps({
 FAILING_SCHEMA = "Record(<u>A</u>, B, C)"
 VERIFIED_SCHEMA = "Mapping(<u>A</u>, B)\nDescription(<u>B</u>, C)"
 TOKEN_COLUMNS = ("input_tokens", "output_tokens", "total_tokens")
+SCHEMA_TIMING_COLUMNS = (
+    "schema_validation_seconds", "ddl_generation_seconds", "verification_seconds",
+)
 
 
 class ScriptedLLM:
@@ -67,12 +70,13 @@ class BatchTests(unittest.TestCase):
             "spec_id", "input_line", "stage", "iteration", "status", "database_specification",
             "prompt", "model_response", *TOKEN_COLUMNS,
             "attributes", "attribute_types", "functional_dependencies", "relational_schema",
-            "feedback", "verification", "create_queries",
+            "feedback", "verification", "create_queries", "elapsed_seconds", "llm_seconds", *SCHEMA_TIMING_COLUMNS,
+            "pipeline_total_seconds",
         ))
         self.assertEqual(tuple(EXTRACTION_CSV_COLUMNS), (
             "spec_id", "input_line", "status", "database_specification", "prompt", "model_response",
             *TOKEN_COLUMNS, "attributes", "attribute_types",
-            "functional_dependencies", "feedback",
+            "functional_dependencies", "feedback", "elapsed_seconds", "llm_seconds",
         ))
 
     def test_csv_records_raw_responses_revisions_and_final_status_for_each_spec(self):
@@ -111,6 +115,25 @@ class BatchTests(unittest.TestCase):
             ("", "", ""), ("56", "8", "64"), ("0", "0", "0"),
             ("", "", ""), ("", "", ""), ("72", "", "81"),
         ])
+        for row in rows:
+            with self.subTest(spec_id=row["spec_id"], iteration=row["iteration"]):
+                elapsed = float(row["elapsed_seconds"])
+                llm_duration = float(row["llm_seconds"])
+                self.assertGreaterEqual(llm_duration, 0)
+                self.assertLessEqual(llm_duration, elapsed)
+                if row["stage"] == "extraction":
+                    self.assertTrue(all(not row[column] for column in SCHEMA_TIMING_COLUMNS))
+                else:
+                    for column in SCHEMA_TIMING_COLUMNS:
+                        duration = float(row[column])
+                        self.assertGreaterEqual(duration, 0)
+                        self.assertLessEqual(duration, elapsed)
+        for extraction, rejection, last_attempt in (rows[:3], rows[3:]):
+            self.assertEqual(extraction["pipeline_total_seconds"], "")
+            self.assertEqual(rejection["pipeline_total_seconds"], "")
+            self.assertGreaterEqual(float(last_attempt["pipeline_total_seconds"]), sum(
+                float(row["elapsed_seconds"]) for row in (extraction, rejection, last_attempt)
+            ))
         self.assertEqual(rows[0]["model_response"], raw_extraction)
         self.assertEqual(rows[2]["model_response"], raw_schema)
         self.assertEqual(rows[2]["relational_schema"], VERIFIED_SCHEMA)
@@ -121,7 +144,7 @@ class BatchTests(unittest.TestCase):
         first_extraction, second_extraction = self.read_extractions()
         shared_columns = (
             "spec_id", "input_line", "status", "database_specification", "prompt", "model_response",
-            "attributes", "attribute_types", "functional_dependencies",
+            "attributes", "attribute_types", "functional_dependencies", "elapsed_seconds", "llm_seconds",
         )
         for extraction, main_row in zip((first_extraction, second_extraction), (rows[0], rows[3])):
             for column in shared_columns:
@@ -175,6 +198,7 @@ class BatchTests(unittest.TestCase):
         ])
         self.assertEqual(rows[2]["model_response"], rows[1]["model_response"])
         self.assertEqual(rows[2]["feedback"], rows[1]["feedback"])
+        self.assertGreaterEqual(float(rows[2]["pipeline_total_seconds"]), float(rows[2]["elapsed_seconds"]))
 
     def test_malformed_input_and_model_errors_are_logged_before_batch_continues(self):
         self.write_input(
@@ -211,12 +235,23 @@ class BatchTests(unittest.TestCase):
             ("recovers", "schema", "verified"),
         ])
         self.assertEqual(rows[2]["model_response"], malformed_extraction)
+        for row in rows[:2]:
+            for column in ("elapsed_seconds", "llm_seconds", *SCHEMA_TIMING_COLUMNS, "pipeline_total_seconds"):
+                self.assertEqual(row[column], "")
+        self.assertGreaterEqual(float(rows[2]["llm_seconds"]), 0)
+        self.assertGreaterEqual(float(rows[2]["pipeline_total_seconds"]), float(rows[2]["elapsed_seconds"]))
         self.assertIn("Model unavailable.", rows[4]["feedback"])
         self.assertEqual(json.loads(rows[4]["prompt"]), llm.calls[2])
         self.assertEqual(self.token_counts(rows[4]), ("", "", ""))
+        self.assertGreaterEqual(float(rows[4]["llm_seconds"]), 0)
+        self.assertGreaterEqual(float(rows[4]["pipeline_total_seconds"]), float(rows[4]["elapsed_seconds"]))
+        self.assertTrue(all(not rows[4][column] for column in SCHEMA_TIMING_COLUMNS))
         self.assertEqual(rows[6]["model_response"], malformed_candidate)
         self.assertEqual(self.token_counts(rows[6]), ("25", "5", "30"))
         self.assertIn("Invalid relational schema", rows[6]["feedback"])
+        self.assertGreaterEqual(float(rows[6]["schema_validation_seconds"]), 0)
+        self.assertEqual(rows[6]["ddl_generation_seconds"], "")
+        self.assertEqual(rows[6]["verification_seconds"], "")
         self.assertTrue(json.loads(rows[-1]["verification"])["verified"])
 
         extractions = self.read_extractions()
@@ -225,6 +260,8 @@ class BatchTests(unittest.TestCase):
         ])
         self.assertEqual(extractions[0]["model_response"], malformed_extraction)
         self.assertEqual(extractions[0]["feedback"], rows[2]["feedback"])
+        self.assertEqual(extractions[0]["elapsed_seconds"], rows[2]["elapsed_seconds"])
+        self.assertEqual(extractions[0]["llm_seconds"], rows[2]["llm_seconds"])
         self.assertEqual(json.loads(extractions[0]["prompt"]), llm.calls[0])
         self.assertEqual(self.token_counts(extractions[0]), ("14", "5", "19"))
 

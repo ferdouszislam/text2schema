@@ -24,10 +24,13 @@ CSV_COLUMNS = (
     "spec_id", "input_line", "stage", "iteration", "status", "database_specification",
     "prompt", "model_response", *_TOKEN_COLUMNS, "attributes", "attribute_types", "functional_dependencies",
     "relational_schema", "feedback", "verification", "create_queries",
+    "elapsed_seconds", "llm_seconds", "schema_validation_seconds", "ddl_generation_seconds",
+    "verification_seconds", "pipeline_total_seconds",
 )
 EXTRACTION_CSV_COLUMNS = (
     "spec_id", "input_line", "status", "database_specification", "prompt", "model_response",
     *_TOKEN_COLUMNS, "attributes", "attribute_types", "functional_dependencies", "feedback",
+    "elapsed_seconds", "llm_seconds",
 )
 _JSON_COLUMNS = ("prompt", "attributes", "attribute_types", "functional_dependencies", "verification", "create_queries")
 
@@ -196,8 +199,10 @@ def run_batch(
     The specification field contains the input text. The optional ID field
     supplies the source identifier, with ``line-N`` used when it is missing.
     The results CSV records the extraction and every attempted schema, with
-    submitted prompts, raw replies, and per-proposal token counts. The separate
-    extraction CSV records only the extraction stages and their token counts.
+    submitted prompts, raw replies, per-proposal token counts, and elapsed
+    times in seconds. The final row for each pipeline run includes its total
+    duration. The separate extraction CSV records extraction attempts with
+    their token counts, request durations, and elapsed times.
     If omitted, ``extraction_csv`` defaults to ``extraction_<output name>``
     beside the results CSV. Both files are staged before publication. The
     return value counts records, verified schemas, exhausted records, early

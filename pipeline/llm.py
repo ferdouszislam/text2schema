@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import json
 from http.client import HTTPException
 from math import isfinite
+from time import monotonic, sleep
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
@@ -36,7 +37,8 @@ class LLMClient:
     For ``backend="ollama"``, use the model name as installed in Ollama.
     Ollama defaults to ``http://127.0.0.1:11434`` and accepts an optional
     bearer key for authenticated servers. Supply a base URL to override the
-    corresponding provider endpoint, and a positive timeout in seconds.
+    corresponding provider endpoint, and a positive timeout in seconds. Set
+    ``request_delay_seconds`` to wait between calls made by this client.
 
     Call the client with a list of ``{"role": ..., "content": ...}`` messages
     to get nonblank assistant text. Use ``complete`` to also get token counts
@@ -51,6 +53,7 @@ class LLMClient:
         backend: str = "hosted",
         api_base: str | None = None,
         timeout: float = 120,
+        request_delay_seconds: float = 0,
     ):
         if not isinstance(model, str) or not model.strip():
             raise ValueError("Provide an LLM model name.")
@@ -63,6 +66,9 @@ class LLMClient:
                 raise ValueError("Use a provider/model name for the hosted backend.")
         if not isinstance(timeout, (float, int)) or not isfinite(timeout) or timeout <= 0:
             raise ValueError("The LLM timeout must be a positive number of seconds.")
+        if (not isinstance(request_delay_seconds, (float, int)) or not isfinite(request_delay_seconds)
+                or request_delay_seconds < 0):
+            raise ValueError("The LLM request delay must be a finite, nonnegative number of seconds.")
         if api_key is not None and (
             not isinstance(api_key, str) or not api_key.strip() or "\r" in api_key or "\n" in api_key
         ):
@@ -75,6 +81,8 @@ class LLMClient:
         self.api_base = api_base
         self.timeout = timeout
         self._api_key = api_key
+        self._request_delay_seconds = request_delay_seconds
+        self._last_request_finished: float | None = None
 
     def __call__(self, messages: list[dict[str, str]]) -> str:
         text = self.complete(messages).text
@@ -88,9 +96,19 @@ class LLMClient:
         An empty reply is retained. Token counts that the backend omits stay
         ``None``. The total falls back to the sum when both counts are known.
         """
-        if self.backend == "hosted":
-            return self._hosted(messages)
-        return self._ollama(messages)
+        if self._last_request_finished is not None:
+            elapsed = monotonic() - self._last_request_finished
+            remaining = self._request_delay_seconds - elapsed
+            if remaining > 0:
+                sleep(remaining)
+
+        try:
+            if self.backend == "hosted":
+                return self._hosted(messages)
+            return self._ollama(messages)
+        finally:
+            if self._request_delay_seconds:
+                self._last_request_finished = monotonic()
 
     def _hosted(self, messages: list[dict[str, str]]) -> LLMResponse:
         try:

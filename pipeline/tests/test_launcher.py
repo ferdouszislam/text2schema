@@ -7,9 +7,10 @@ import runpy
 import sys
 from tempfile import TemporaryDirectory
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import ANY, Mock, call, patch
 
 import run_pipeline as launcher
+from pipeline.llm import LLMResponse
 
 
 EXTRACTION = json.dumps({
@@ -45,7 +46,7 @@ class LauncherTests(unittest.TestCase):
         lines = [record if isinstance(record, str) else json.dumps(record) for record in records]
         self.input.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-    def configure(self, *, max_iterations=2, debug=None):
+    def configure(self, *, max_iterations=2, debug=None, request_delay=None):
         settings = {
             "PIPELINE_INPUT_JSONL": self.input.name,
             "PIPELINE_SPEC_FIELD": "requirements",
@@ -61,6 +62,8 @@ class LauncherTests(unittest.TestCase):
         }
         if debug is not None:
             settings["debug"] = debug
+        if request_delay is not None:
+            settings["PIPELINE_REQUEST_DELAY_SECONDS"] = request_delay
         self.config.write_text("".join(f"{key}={value}\n" for key, value in settings.items()),
                                encoding="utf-8")
 
@@ -255,11 +258,41 @@ class LauncherTests(unittest.TestCase):
                 self.assertEqual(exited.exception.code, 0)
                 client.assert_called_once_with(
                     model, backend=backend, api_key=api_key, api_base=api_base, timeout=timeout,
+                    request_delay_seconds=3.0,
                 )
                 report_dir = self.report_root / folder
                 self.assertEqual(batch.call_args.args[1], report_dir / self.results.name)
                 self.assertEqual(batch.call_args.kwargs["extraction_csv"], report_dir / self.extraction.name)
                 self.assertEqual(batch.call_args.kwargs["max_iterations"], max_iterations)
+
+    def test_dotenv_request_delay_applies_between_stages_and_records(self):
+        self.configure(request_delay=1.5)
+        events = Mock()
+        events.request.side_effect = [LLMResponse(EXTRACTION), LLMResponse(VERIFIED_SCHEMA)] * 2
+        with (patch.object(launcher, "_ROOT", self.directory),
+              patch.object(launcher.LLMClient, "_ollama", events.request),
+              patch("pipeline.llm.monotonic", return_value=0),
+              patch("pipeline.llm.sleep", events.sleep), redirect_stdout(StringIO())):
+            exit_code = launcher.main()
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(events.mock_calls, [
+            call.request(ANY), call.sleep(1.5), call.request(ANY),
+            call.sleep(1.5), call.request(ANY), call.sleep(1.5), call.request(ANY),
+        ])
+
+    def test_invalid_request_delay_fails_before_model_setup(self):
+        for value in ("", "-1", "nan", "inf", "invalid"):
+            with self.subTest(value=value):
+                self.configure(request_delay=value)
+                error = StringIO()
+                with (patch.object(launcher, "_ROOT", self.directory),
+                      patch.object(launcher, "LLMClient") as model, redirect_stderr(error)):
+                    exit_code = launcher.main()
+
+                self.assertEqual(exit_code, 2)
+                model.assert_not_called()
+                self.assertIn("PIPELINE_REQUEST_DELAY_SECONDS", error.getvalue())
 
     def test_removed_dry_run_argument_is_rejected(self):
         self.configure(debug="true")

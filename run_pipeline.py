@@ -3,6 +3,7 @@
 import argparse
 from contextlib import suppress
 import logging
+from math import isfinite
 from pathlib import Path
 import re
 import sys
@@ -89,18 +90,28 @@ def main(
             raise ValueError("PIPELINE_MAX_ITERATIONS must be a positive integer.") from None
         if max_iterations < 1:
             raise ValueError("PIPELINE_MAX_ITERATIONS must be a positive integer.")
+        try:
+            request_delay = float(settings.get("PIPELINE_REQUEST_DELAY_SECONDS", "3") or "")
+            if not isfinite(request_delay) or request_delay < 0:
+                raise ValueError
+        except ValueError:
+            raise ValueError("PIPELINE_REQUEST_DELAY_SECONDS must be a finite, nonnegative number.") from None
 
         extraction_path = _ROOT / _required(settings, "PIPELINE_EXTRACTION_PROMPT")
         schema_path = _ROOT / _required(settings, "PIPELINE_SCHEMA_PROMPT")
         extraction_prompt = _read_prompt(extraction_path)
         schema_prompt = _read_prompt(schema_path)
-        llm = LLMClient(model, backend=backend, api_key=api_key, api_base=api_base, timeout=timeout)
+        llm = LLMClient(
+            model, backend=backend, api_key=api_key, api_base=api_base, timeout=timeout,
+            request_delay_seconds=request_delay,
+        )
         run_directory = _create_run_directory(model, debug=debug)
         output_csv = run_directory / "results.csv"
         extraction_csv = default_extraction_csv(output_csv)
         _LOGGER.info(
-            "Starting %s batch for %r (backend=%s, request timeout=%gs, max schema attempts=%d, input=%s)",
-            "debug" if debug else "full", model, backend, timeout, max_iterations, input_jsonl,
+            "Starting %s batch for %r (backend=%s, request timeout=%gs, request delay=%gs, "
+            "max schema attempts=%d, input=%s)",
+            "debug" if debug else "full", model, backend, timeout, request_delay, max_iterations, input_jsonl,
         )
         started_at = monotonic()
         results = run_batch(

@@ -48,10 +48,13 @@ The input is UTF-8 JSONL with one JSON object per line. The default fields match
 | `PIPELINE_API_KEY` | `--api-key` | Supply an API key when needed. |
 | `PIPELINE_API_BASE` | `--api-base` | Override the model endpoint. |
 | `PIPELINE_TIMEOUT_SECONDS` | `--timeout-seconds` | Set the model request timeout in seconds. |
+| `PIPELINE_REQUEST_DELAY_SECONDS` | | Set the minimum pause between model requests in seconds. Defaults to `3`. Set `0` to disable the pause. |
 | `PIPELINE_MAX_ITERATIONS` | `--max-iterations` | Set the total proposal limit per specification. |
 | `PIPELINE_EXTRACTION_PROMPT`, `PIPELINE_SCHEMA_PROMPT` | | Select the editable prompt files. |
 
 Relative paths are resolved from the project root.
+
+The first model request starts immediately. The delay runs from the end of a request, including a failed request, to the start of the next request in the batch. Both backends accept finite, nonnegative values in seconds, including fractional values.
 
 For the default Ollama configuration, start the server and run `ollama pull qwen3:8b`. The default endpoint is `http://127.0.0.1:11434`. For a hosted model, set `PIPELINE_BACKEND=hosted`, choose a model such as `openai/gpt-4o-mini`, and supply its credentials. For a custom OpenAI-compatible endpoint, use `openai/<model>` and set `PIPELINE_API_BASE` to the endpoint base URL. [Ollama API](https://docs.ollama.com/api/chat) · [LiteLLM providers and credentials](https://docs.litellm.ai/docs/providers) · [OpenAI-compatible endpoints](https://docs.litellm.ai/docs/providers/openai_compatible)
 

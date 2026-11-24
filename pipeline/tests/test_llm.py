@@ -3,13 +3,65 @@ import json
 import sys
 import unittest
 from types import SimpleNamespace
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, call, patch
 from urllib.error import HTTPError, URLError
 
 from pipeline.llm import LLMClient, LLMError, LLMResponse
 
 
 MESSAGES = [{"role": "user", "content": "Return the proposed relations."}]
+
+
+class RequestDelayTests(unittest.TestCase):
+    def test_spacing_uses_previous_completion_even_after_failure(self):
+        for backend, model, adapter in (
+            ("hosted", "openai/example-model", "_hosted"),
+            ("ollama", "llama3.2", "_ollama"),
+        ):
+            with self.subTest(backend=backend):
+                now = 10.0
+                request_starts = []
+                response = LLMResponse("Student(Id)")
+
+                def advance(seconds):
+                    nonlocal now
+                    now += seconds
+
+                def request(messages):
+                    request_starts.append(now)
+                    advance(5)
+                    if len(request_starts) == 2:
+                        raise LLMError("Provider unavailable")
+                    return response
+
+                client = LLMClient(model, backend=backend, request_delay_seconds=3)
+                with (
+                    patch("pipeline.llm.monotonic", side_effect=lambda: now),
+                    patch("pipeline.llm.sleep", side_effect=advance) as sleep,
+                    patch.object(client, adapter, side_effect=request),
+                ):
+                    self.assertEqual(client.complete(MESSAGES), response)
+                    advance(1)
+                    with self.assertRaisesRegex(LLMError, "Provider unavailable"):
+                        client.complete(MESSAGES)
+                    self.assertEqual(client.complete(MESSAGES), response)
+                    advance(4)
+                    self.assertEqual(client.complete(MESSAGES), response)
+
+                self.assertEqual(request_starts, [10.0, 18.0, 26.0, 35.0])
+                self.assertEqual(sleep.call_args_list, [call(2.0), call(3.0)])
+
+    def test_zero_delay_does_not_sleep(self):
+        client = LLMClient("openai/example-model", request_delay_seconds=0)
+        response = LLMResponse("Student(Id)")
+        with (
+            patch("pipeline.llm.sleep") as sleep,
+            patch.object(client, "_hosted", return_value=response) as request,
+        ):
+            client.complete(MESSAGES)
+            client.complete(MESSAGES)
+        self.assertEqual(request.call_args_list, [call(MESSAGES), call(MESSAGES)])
+        sleep.assert_not_called()
 
 
 class HostedClientTests(unittest.TestCase):

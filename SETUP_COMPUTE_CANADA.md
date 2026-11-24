@@ -96,14 +96,14 @@ The job sets a 32,768-token (32K) context for all three models by default. Set `
 
 Replace `YOUR_FIR_GPU_ACCOUNT` with the Slurm account for your Fir GPU project. To see your account associations, run `sshare -U -u "$USER" -P -o Account,User`. The project group name is also listed in CCDB under **My Projects → My Resources and Allocations**. [Alliance Slurm account guide](https://ualberta-rcg.github.io/ragflow-wiki-data/base/running-jobs/running_jobs/#accounts-and-projects)
 
-Submit the 35B and 27B array first. Each of the eight tasks requests 24 hours and runs one model over one chunk. Up to four tasks can run at once, subject to Fir availability and your account limits. [Slurm job arrays](https://slurm.schedmd.com/job_array.html)
+Submit the 35B and 27B array first. Each of the eight tasks requests 24 hours and runs one model over one chunk. All eight tasks can run at once, subject to Fir availability and your account limits. [Slurm job arrays](https://slurm.schedmd.com/job_array.html)
 
 ```bash
 cd "$SCRATCH/text2schema"
 sbatch --account=YOUR_FIR_GPU_ACCOUNT run_fir_qwen_27b_35b.slurm
 ```
 
-When you are ready to queue the 9B, submit its separate array. Each task requests 72 hours and the default permits one 9B task at a time.
+When you are ready to queue the 9B, submit its separate array. Each task requests 72 hours, and all four tasks can run concurrently when Fir has capacity.
 
 ```bash
 sbatch --account=YOUR_FIR_GPU_ACCOUNT run_fir_qwen_9b.slurm

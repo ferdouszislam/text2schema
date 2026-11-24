@@ -6,7 +6,7 @@
 #SBATCH --gpus=h100:1
 #SBATCH --mem=48G
 #SBATCH --time=3-00:00:00
-#SBATCH --array=0-3%1
+#SBATCH --array=0-3%4
 #SBATCH --output=%x-%A_%a.log
 
 set -euo pipefail

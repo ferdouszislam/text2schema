@@ -8,18 +8,24 @@ Set `debug=true` in `.env` to process up to three valid specifications. The defa
 
 The launcher scans the input and counts whitespace-separated words in each valid specification using `len(specification.split())`. It uses the field named by `PIPELINE_SPEC_FIELD` and skips malformed records and rows without a nonblank specification string. It selects the longest specification first and then the shortest from the remaining records, using the earliest input line for ties. It sorts the remaining records by word count and input line number and takes the middle record. If two records fall in the middle, it chooses the second in that order. With just one or two valid specifications, it processes each once. If the input has no valid specifications, the launcher reports an error.
 
-Each selected record uses the configured model and retry limit. The launcher saves both CSVs in `pipeline/results/debug/<model-name>/`, adding `-1`, `-2`, and later suffixes to the model folder name as needed for repeat debug runs.
+Each selected record uses the configured model and schema proposal limit. The launcher saves both CSVs in `pipeline/results/debug/<model-name>/`, adding `-1`, `-2`, and later suffixes to the model folder name as needed for repeat debug runs.
 
 ## From specification to SQL
 
 The pipeline is based on the workflow in Figure 1 of the project proposal. [Project proposal](../formal_verification_guided_text2schema.pdf)
 
-1. The extraction prompt asks the model for one JSON object with `attribute_types` and `functional_dependencies`. `attribute_types` lists each attribute with its SQLite type. The pipeline derives the attribute list from those keys, including attributes absent from all functional dependencies (FDs). It validates the types and FD syntax before asking for a schema. If a dependency has an empty right-hand side, extraction validates the left-hand side and omits the dependency from the parsed list. The extraction runs once per specification. [Extraction prompt](prompts/extract_fds_attributes_and_types_prompt.txt)
+1. The extraction prompt asks the model for one JSON object with `attribute_types` and `functional_dependencies`. `attribute_types` lists each attribute with its SQLite type. The pipeline derives the attribute list from those keys, including attributes absent from all functional dependencies (FDs). It validates the types and FD syntax before asking for a schema. If a dependency has an empty right-hand side, extraction validates the left-hand side and omits the dependency from the parsed list. Each specification has one extraction stage. [Extraction prompt](prompts/extract_fds_attributes_and_types_prompt.txt)
 2. The schema prompt asks the model to construct relations over the extracted attributes using the FDs. The user message carries the original specification, attribute names, and FDs. Each revision also receives `attempt_history`, an ordered list of all completed proposals for that specification, with the latest proposal last. Each entry pairs its `iteration` and `relational_schema` with the `feedback` from evaluating that proposal. The extracted names and FDs stay fixed across attempts. The response uses one relation declaration per line and `<u>` tags around every column of a declared primary key. [Schema prompt](prompts/generate_relational_schema_prompt.txt)
 3. The pipeline parses each proposal and uses the extracted types to generate SQLite `CREATE TABLE` statements for its relations. It can generate SQL for a proposal that omits an expected attribute if all the columns it declares have extracted types. Malformed proposals, attributes without extracted types, and invalid SQLite identifiers yield feedback and an empty query list. [CREATE query generator guide](../create_query_generator/README.md)
 4. For proposals that contain exactly the extracted attributes, the verifier checks 2NF, 3NF, lossless decomposition, and dependency preservation under the extracted FDs. When verification and SQL generation succeed, processing moves to the next record. A rejected proposal supplies feedback to the next attempt. The default `PIPELINE_MAX_ITERATIONS=3` includes the first proposal. If all allowed proposals are rejected, the last one is marked `exhausted` and its generated SQL is recorded when available. [Verifier guide](../verifier/README.md)
 
 Malformed input, invalid extraction, and model call failures are recorded against the affected record. The batch continues processing subsequent records. The formal checks apply to the extracted attributes and FDs.
+
+### Hosted HTTP 503 retries
+
+The hosted client retries extraction and schema requests that return HTTP 503. The default allows two additional attempts per request. Set `PIPELINE_HOSTED_503_RETRIES` in `.env` or pass `--hosted-503-retries` with a nonnegative integer. A value of `0` disables these retries.
+
+Each retry sends the same prompt for the same stage and iteration. The wait uses exponential backoff with jitter and respects `PIPELINE_REQUEST_DELAY_SECONDS`. The launcher reports failed 503 requests in the live progress log and gives the wait time before each retry. The CSVs record the eventual outcome for that stage and iteration, including reported token counts from the successful reply. If the retries are exhausted with HTTP 503, the row records an `error`.
 
 ## CSV reports
 

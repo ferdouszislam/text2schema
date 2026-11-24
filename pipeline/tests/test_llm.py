@@ -65,7 +65,7 @@ class RequestDelayTests(unittest.TestCase):
 
 
 class HostedClientTests(unittest.TestCase):
-    def test_forwards_model_credentials_base_and_messages_without_retries(self):
+    def test_forwards_model_credentials_base_and_messages_with_sdk_retries_disabled(self):
         response = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content="Student(Id)"))])
         completion = Mock(return_value=response)
         client = LLMClient(
@@ -166,6 +166,53 @@ class HostedClientTests(unittest.TestCase):
         self.assertNotIn("test-hosted-key", str(caught.exception))
         self.assertTrue(caught.exception.__suppress_context__)
         completion.assert_called_once()
+
+    def test_hosted_503_retry_uses_fresh_messages_and_usage(self):
+        failure = RuntimeError("temporarily unavailable")
+        failure.status_code = 503
+        sent_messages = []
+
+        def completion(**options):
+            messages = options["messages"]
+            sent_messages.append([message.copy() for message in messages])
+            if len(sent_messages) == 1:
+                messages[0]["content"] = "Adapter changed its copy"
+                options["logger_fn"]({
+                    "log_event_type": "post_api_call",
+                    "original_response": {"object": "chat.completion", "choices": [], "usage": {"prompt_tokens": 99}},
+                })
+                raise failure
+            return {"choices": [{"message": {"content": "Student(Id)"}}],
+                    "usage": {"prompt_tokens": 5, "completion_tokens": 3}}
+
+        client = LLMClient("gemini/test-model", request_delay_seconds=5)
+        with (patch.dict(sys.modules, {"litellm": SimpleNamespace(completion=completion)}),
+              patch("pipeline.llm.uniform", return_value=3), patch("pipeline.llm.sleep") as sleep):
+            self.assertEqual(client.complete([message.copy() for message in MESSAGES]),
+                             LLMResponse("Student(Id)", 5, 3, 8))
+
+        self.assertEqual(sent_messages, [MESSAGES, MESSAGES])
+        sleep.assert_called_once_with(5)
+
+    def test_hosted_retries_are_bounded_and_require_http_503(self):
+        for status, options, calls, expected_sleeps, message in (
+            (503, {}, 3, [call(4), call(8)], "HTTP 503"),
+            (503, {"hosted_503_retries": 0}, 1, [], "HTTP 503"),
+            (429, {}, 1, [], "rate limited"),
+        ):
+            failure = RuntimeError("provider error")
+            failure.status_code = status
+            completion = Mock(side_effect=failure)
+            client = LLMClient("gemini/test-model", **options)
+
+            with (self.subTest(status=status, options=options),
+                  patch.dict(sys.modules, {"litellm": SimpleNamespace(completion=completion)}),
+                  patch("pipeline.llm.uniform", side_effect=lambda low, high: high),
+                  patch("pipeline.llm.sleep") as sleep):
+                with self.assertRaisesRegex(LLMError, message):
+                    client.complete(MESSAGES)
+                self.assertEqual(completion.call_count, calls)
+                self.assertEqual(sleep.call_args_list, expected_sleeps)
 
     def test_missing_optional_package_gives_setup_error_on_use(self):
         client = LLMClient("openai/example-model")

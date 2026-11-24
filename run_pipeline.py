@@ -12,7 +12,7 @@ from time import monotonic
 from dotenv import dotenv_values
 
 from pipeline.batch import default_extraction_csv, run_batch
-from pipeline.llm import LLMClient
+from pipeline.llm import DEFAULT_HOSTED_503_RETRIES, LLMClient
 
 
 _ROOT = Path(__file__).resolve().parent
@@ -96,6 +96,12 @@ def main(
                 raise ValueError
         except ValueError:
             raise ValueError("PIPELINE_REQUEST_DELAY_SECONDS must be a finite, nonnegative number.") from None
+        try:
+            hosted_503_retries = int(settings.get("PIPELINE_HOSTED_503_RETRIES", str(DEFAULT_HOSTED_503_RETRIES)) or "")
+            if hosted_503_retries < 0:
+                raise ValueError
+        except ValueError:
+            raise ValueError("PIPELINE_HOSTED_503_RETRIES must be a nonnegative integer.") from None
 
         extraction_path = _ROOT / _required(settings, "PIPELINE_EXTRACTION_PROMPT")
         schema_path = _ROOT / _required(settings, "PIPELINE_SCHEMA_PROMPT")
@@ -103,15 +109,16 @@ def main(
         schema_prompt = _read_prompt(schema_path)
         llm = LLMClient(
             model, backend=backend, api_key=api_key, api_base=api_base, timeout=timeout,
-            request_delay_seconds=request_delay,
+            request_delay_seconds=request_delay, hosted_503_retries=hosted_503_retries,
         )
         run_directory = _create_run_directory(model, debug=debug)
         output_csv = run_directory / "results.csv"
         extraction_csv = default_extraction_csv(output_csv)
         _LOGGER.info(
             "Starting %s batch for %r (backend=%s, request timeout=%gs, request delay=%gs, "
-            "max schema attempts=%d, input=%s)",
-            "debug" if debug else "full", model, backend, timeout, request_delay, max_iterations, input_jsonl,
+            "hosted 503 retries=%d, max schema attempts=%d, input=%s)",
+            "debug" if debug else "full", model, backend, timeout, request_delay,
+            hosted_503_retries if backend == "hosted" else 0, max_iterations, input_jsonl,
         )
         started_at = monotonic()
         results = run_batch(
@@ -159,6 +166,8 @@ if __name__ == "__main__":
                         help="API base URL. Pass an empty string to clear it.")
     parser.add_argument("--timeout-seconds", dest="PIPELINE_TIMEOUT_SECONDS", metavar="SECONDS",
                         help="Model request timeout in seconds.")
+    parser.add_argument("--hosted-503-retries", dest="PIPELINE_HOSTED_503_RETRIES", metavar="COUNT",
+                        help="Retries per hosted request after HTTP 503. Defaults to 2 if unset in .env.")
     parser.add_argument("--max-iterations", dest="PIPELINE_MAX_ITERATIONS", metavar="COUNT",
                         help="Maximum schema proposals per specification.")
     model_overrides = vars(parser.parse_args())

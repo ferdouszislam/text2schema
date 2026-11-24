@@ -4,13 +4,17 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 import json
 from http.client import HTTPException
+import logging
 from math import isfinite
+from random import uniform
 from time import monotonic, sleep
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 
+DEFAULT_HOSTED_503_RETRIES = 2
+_LOGGER = logging.getLogger(__name__)
 _NO_TEXT = "The model returned no assistant text. Check that it supports text chat."
 _MISSING = object()
 
@@ -39,6 +43,8 @@ class LLMClient:
     bearer key for authenticated servers. Supply a base URL to override the
     corresponding provider endpoint, and a positive timeout in seconds. Set
     ``request_delay_seconds`` to wait between calls made by this client.
+    ``hosted_503_retries`` sets how many times to resend a hosted request
+    after HTTP 503. Set it to zero for a single attempt.
 
     Call the client with a list of ``{"role": ..., "content": ...}`` messages
     to get nonblank assistant text. Use ``complete`` to also get token counts
@@ -54,6 +60,7 @@ class LLMClient:
         api_base: str | None = None,
         timeout: float = 120,
         request_delay_seconds: float = 0,
+        hosted_503_retries: int = DEFAULT_HOSTED_503_RETRIES,
     ):
         if not isinstance(model, str) or not model.strip():
             raise ValueError("Provide an LLM model name.")
@@ -69,6 +76,8 @@ class LLMClient:
         if (not isinstance(request_delay_seconds, (float, int)) or not isfinite(request_delay_seconds)
                 or request_delay_seconds < 0):
             raise ValueError("The LLM request delay must be a finite, nonnegative number of seconds.")
+        if type(hosted_503_retries) is not int or hosted_503_retries < 0:
+            raise ValueError("The hosted HTTP 503 retry count must be a nonnegative integer.")
         if api_key is not None and (
             not isinstance(api_key, str) or not api_key.strip() or "\r" in api_key or "\n" in api_key
         ):
@@ -82,6 +91,7 @@ class LLMClient:
         self.timeout = timeout
         self._api_key = api_key
         self._request_delay_seconds = request_delay_seconds
+        self._hosted_503_retries = hosted_503_retries
         self._last_request_finished: float | None = None
 
     def __call__(self, messages: list[dict[str, str]]) -> str:
@@ -91,7 +101,7 @@ class LLMClient:
         return text
 
     def complete(self, messages: list[dict[str, str]]) -> LLMResponse:
-        """Return exact assistant text and token usage from one model request.
+        """Return exact assistant text and token usage from the completed model request.
 
         An empty reply is retained. Token counts that the backend omits stay
         ``None``. The total falls back to the sum when both counts are known.
@@ -138,7 +148,6 @@ class LLMClient:
 
         options = {
             "model": self.model,
-            "messages": messages,
             "timeout": self.timeout,
             "stream": False,
             "num_retries": 0,
@@ -149,13 +158,31 @@ class LLMClient:
             options["api_key"] = self._api_key
         if self.api_base is not None:
             options["api_base"] = self.api_base
-        try:
-            response = completion(**options)
-        except Exception as error:
-            status = getattr(error, "status_code", None)
-            if isinstance(error, TimeoutError) or "Timeout" in type(error).__name__:
-                raise LLMError("The hosted model request timed out. Check the provider or increase the timeout.") from None
-            raise LLMError(_request_error("Hosted model", status)) from None
+
+        backoff_limit = 4.0
+        for attempt in range(self._hosted_503_retries + 1):
+            wire_usage = None
+            try:
+                response = completion(messages=[message.copy() for message in messages], **options)
+            except Exception as error:
+                status = getattr(error, "status_code", None)
+                if status == 503:
+                    if attempt == self._hosted_503_retries:
+                        raise LLMError("Hosted model returned HTTP 503 (Service Unavailable).") from None
+                elif isinstance(error, TimeoutError) or "Timeout" in type(error).__name__:
+                    raise LLMError(
+                        "The hosted model request timed out. Check the provider or increase the timeout."
+                    ) from None
+                else:
+                    raise LLMError(_request_error("Hosted model", status)) from None
+            else:
+                break
+
+            delay = max(self._request_delay_seconds, uniform(backoff_limit / 2, backoff_limit))
+            _LOGGER.info("Hosted model returned HTTP 503. Retrying request (%d/%d) in %.1fs.",
+                         attempt + 1, self._hosted_503_retries, delay)
+            sleep(delay)
+            backoff_limit = min(backoff_limit * 2, 60.0)
 
         try:
             choice = _field(response, "choices")[0]

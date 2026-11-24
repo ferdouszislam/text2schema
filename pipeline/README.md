@@ -30,7 +30,7 @@ Set `debug=true` in the root `.env` and run the same command.
 python run_pipeline.py
 ```
 
-Debug mode runs the longest, shortest, and middle valid specifications by word count, in that order, using the configured model and retry limit. If only one or two valid specifications are available, it runs each once. It saves both CSVs under `pipeline/results/debug/<model-name>/`. [Debug mode details](PIPELINE-EXPLAINED.md#debug-mode)
+Debug mode runs the longest, shortest, and middle valid specifications by word count, in that order, using the configured model and schema proposal limit. If only one or two valid specifications are available, it runs each once. It saves both CSVs under `pipeline/results/debug/<model-name>/`. [Debug mode details](PIPELINE-EXPLAINED.md#debug-mode)
 
 The input is UTF-8 JSONL with one JSON object per line. The default fields match the cleaned RSchema records. `question` holds the specification and `id` identifies the record in the results.
 
@@ -49,12 +49,15 @@ The input is UTF-8 JSONL with one JSON object per line. The default fields match
 | `PIPELINE_API_BASE` | `--api-base` | Override the model endpoint. |
 | `PIPELINE_TIMEOUT_SECONDS` | `--timeout-seconds` | Set the model request timeout in seconds. |
 | `PIPELINE_REQUEST_DELAY_SECONDS` | | Set the minimum pause between model requests in seconds. Defaults to `3`. Set `0` to disable the pause. |
+| `PIPELINE_HOSTED_503_RETRIES` | `--hosted-503-retries` | Set the number of additional attempts after HTTP 503 on a hosted extraction or schema request. Defaults to `2`. Set `0` to disable these retries. |
 | `PIPELINE_MAX_ITERATIONS` | `--max-iterations` | Set the total proposal limit per specification. |
 | `PIPELINE_EXTRACTION_PROMPT`, `PIPELINE_SCHEMA_PROMPT` | | Select the editable prompt files. |
 
 Relative paths are resolved from the project root.
 
 The first model request starts immediately. The delay runs from the end of a request, including a failed request, to the start of the next request in the batch. Both backends accept finite, nonnegative values in seconds, including fractional values.
+
+Hosted HTTP 503 retries use exponential backoff with jitter and respect the minimum request pause. The launcher reports each retry and its wait time in the live progress log. [Hosted HTTP 503 retries](PIPELINE-EXPLAINED.md#hosted-http-503-retries)
 
 For the default Ollama configuration, start the server and run `ollama pull qwen3:8b`. The default endpoint is `http://127.0.0.1:11434`. For a hosted model, set `PIPELINE_BACKEND=hosted`, choose a model such as `openai/gpt-4o-mini`, and supply its credentials. For a custom OpenAI-compatible endpoint, use `openai/<model>` and set `PIPELINE_API_BASE` to the endpoint base URL. [Ollama API](https://docs.ollama.com/api/chat) · [LiteLLM providers and credentials](https://docs.litellm.ai/docs/providers) · [OpenAI-compatible endpoints](https://docs.litellm.ai/docs/providers/openai_compatible)
 

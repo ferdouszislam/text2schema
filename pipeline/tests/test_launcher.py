@@ -6,6 +6,7 @@ from pathlib import Path
 import runpy
 import sys
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 import unittest
 from unittest.mock import ANY, Mock, call, patch
 
@@ -46,7 +47,7 @@ class LauncherTests(unittest.TestCase):
         lines = [record if isinstance(record, str) else json.dumps(record) for record in records]
         self.input.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-    def configure(self, *, max_iterations=2, debug=None, request_delay=None):
+    def configure(self, *, max_iterations=2, debug=None, request_delay=None, hosted_503_retries=None):
         settings = {
             "PIPELINE_INPUT_JSONL": self.input.name,
             "PIPELINE_SPEC_FIELD": "requirements",
@@ -64,6 +65,8 @@ class LauncherTests(unittest.TestCase):
             settings["debug"] = debug
         if request_delay is not None:
             settings["PIPELINE_REQUEST_DELAY_SECONDS"] = request_delay
+        if hosted_503_retries is not None:
+            settings["PIPELINE_HOSTED_503_RETRIES"] = hosted_503_retries
         self.config.write_text("".join(f"{key}={value}\n" for key, value in settings.items()),
                                encoding="utf-8")
 
@@ -230,29 +233,30 @@ class LauncherTests(unittest.TestCase):
         self.assertIn("debug", error.getvalue().lower())
 
     def test_cli_model_options_override_dotenv_independently(self):
-        self.configure()
+        self.configure(hosted_503_retries=3)
         script = self.copy_launcher()
         cases = [
             (
                 ["--model", "other-local-model:latest"],
-                ("other-local-model:latest", "ollama", "file-key", "http://file.example", 12.0, 2),
+                ("other-local-model:latest", "ollama", "file-key", "http://file.example", 12.0, 2, 3),
                 "other-local-model-latest",
             ),
             (
                 ["--backend", "hosted", "--model", "openai/test-model", "--api-key", "cli-key",
                  "--api-base", "https://cli.example/v1", "--timeout-seconds", "4.5",
-                 "--max-iterations", "5"],
-                ("openai/test-model", "hosted", "cli-key", "https://cli.example/v1", 4.5, 5),
+                 "--max-iterations", "5", "--hosted-503-retries", "0"],
+                ("openai/test-model", "hosted", "cli-key", "https://cli.example/v1", 4.5, 5, 0),
                 "openai-test-model",
             ),
             (
                 ["--api-key", "", "--api-base", ""],
-                ("test-model", "ollama", None, None, 12.0, 2),
+                ("test-model", "ollama", None, None, 12.0, 2, 3),
                 "test-model",
             ),
         ]
         batch_results = {"records": 1, "verified": 1, "exhausted": 0, "errors": 0}
-        for args, (model, backend, api_key, api_base, timeout, max_iterations), folder in cases:
+        for args, expected, folder in cases:
+            model, backend, api_key, api_base, timeout, max_iterations, hosted_503_retries = expected
             with (self.subTest(args=args), patch("pipeline.llm.LLMClient") as client,
                   patch("pipeline.batch.run_batch", return_value=batch_results) as batch,
                   patch.object(sys, "argv", [str(script), *args]), redirect_stdout(StringIO())):
@@ -262,12 +266,43 @@ class LauncherTests(unittest.TestCase):
                 self.assertEqual(exited.exception.code, 0)
                 client.assert_called_once_with(
                     model, backend=backend, api_key=api_key, api_base=api_base, timeout=timeout,
-                    request_delay_seconds=3.0,
+                    request_delay_seconds=3.0, hosted_503_retries=hosted_503_retries,
                 )
                 report_dir = self.report_root / folder
                 self.assertEqual(batch.call_args.args[1], report_dir / self.results.name)
                 self.assertEqual(batch.call_args.kwargs["extraction_csv"], report_dir / self.extraction.name)
                 self.assertEqual(batch.call_args.kwargs["max_iterations"], max_iterations)
+
+    def test_hosted_503_retries_keep_extraction_and_schema_iterations(self):
+        self.configure(max_iterations=1, request_delay=0)
+        self.write_records({"case": "first", "requirements": "A determines B and B determines C."})
+        failure = RuntimeError("temporarily unavailable")
+        failure.status_code = 503
+        completion = Mock(side_effect=[
+            failure, {"choices": [{"message": {"content": EXTRACTION}}]},
+            failure, {"choices": [{"message": {"content": VERIFIED_SCHEMA}}],
+                      "usage": {"prompt_tokens": 8, "completion_tokens": 4}},
+        ])
+        overrides = {"PIPELINE_BACKEND": "hosted", "PIPELINE_MODEL": "gemini/test-model"}
+
+        with (patch.object(launcher, "_ROOT", self.directory),
+              patch.dict(sys.modules, {"litellm": SimpleNamespace(completion=completion)}),
+              patch("pipeline.llm.sleep") as sleep, redirect_stdout(StringIO()),
+              self.assertLogs("pipeline.llm", level="INFO") as progress):
+            self.assertEqual(launcher.main(model_overrides=overrides), 0)
+
+        self.assertEqual(sleep.call_count, 2)
+        self.assertEqual(len(progress.records), 2)
+        for record in progress.records:
+            self.assertIn("HTTP 503. Retrying request (1/2)", record.getMessage())
+        sent_messages = [request.kwargs["messages"] for request in completion.call_args_list]
+        self.assertEqual(len(sent_messages), 4)
+        self.assertEqual(sent_messages[0], sent_messages[1])
+        self.assertEqual(sent_messages[2], sent_messages[3])
+        rows = self.read_csv(self.report_root / "gemini-test-model" / "results.csv")
+        self.assertEqual([(row["stage"], row["iteration"], row["status"]) for row in rows],
+                         [("extraction", "0", "extracted"), ("schema", "1", "verified")])
+        self.assertEqual(rows[1]["total_tokens"], "12")
 
     def test_dotenv_request_delay_applies_between_stages_and_records(self):
         self.configure(request_delay=1.5)

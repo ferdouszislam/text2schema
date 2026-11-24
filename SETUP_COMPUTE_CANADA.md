@@ -1,10 +1,6 @@
 # Run text2schema on Compute Canada Fir
 
-[run_fir.slurm](run_fir.slurm) runs the pipeline on one full 80 GB H100. It starts Ollama on the allocated node and runs these models in order, one at a time. [Fir GPU documentation](https://ualberta-rcg.github.io/ragflow-wiki-data/base/software/fir/#gpu-instances)
-
-1. `qwen3.5:35b-a3b-q8_0`
-2. `qwen3.8:27b-q8_0`
-3. `qwen3.5:9b-q4_K_M`
+[run_fir_qwen_27b_35b.slurm](run_fir_qwen_27b_35b.slurm) submits four chunks each for `qwen3.5:35b-a3b-q8_0` and `qwen3.8:27b-q8_0` in one Slurm array. Submit [run_fir_qwen_9b.slurm](run_fir_qwen_9b.slurm) separately when you want to run `qwen3.5:9b-q4_K_M`. Each task starts its own Ollama server on one full 80 GB H100. [Fir GPU documentation](https://ualberta-rcg.github.io/ragflow-wiki-data/base/software/fir/#gpu-instances)
 
 ## 1. Clone the project into Fir scratch
 
@@ -22,10 +18,12 @@ git clone https://github.com/ferdouszislam/text2schema.git
 cd text2schema
 ```
 
-Check that `run_fir.slurm` is in the clone. If your copy of the script is still local, run this from the project root on your computer to transfer it to Fir.
+Use an up-to-date checkout on Fir. If the array changes are still local, run this from the project root on your computer to transfer the updated launchers and Python files to an existing Fir checkout.
 
 ```bash
-scp run_fir.slurm YOUR_FIR_USERNAME@fir.alliancecan.ca:scratch/text2schema/
+fir_project=YOUR_FIR_USERNAME@fir.alliancecan.ca:scratch/text2schema
+scp run_fir_qwen_27b_35b.slurm run_fir_qwen_9b.slurm fir_slurm_shared.sh run_pipeline.py "$fir_project/"
+scp pipeline/batch.py "$fir_project/pipeline/"
 ```
 
 ## 2. Create the Python environment on Fir
@@ -49,9 +47,9 @@ test -f .env || cp .env.example .env
 nano .env
 ```
 
-Set `debug=true` in `.env` for the first job. Set it back to `debug=false` before submitting the full run. The example configuration points to the 375-record cleaned RSchema dataset and the two prompt files included in the clone. It allows up to three schema proposals per record and sets a 300-second timeout per model request. [Example configuration](.env.example) · [Pipeline documentation](pipeline/README.md)
+Set `debug=false` in `.env` before submitting the arrays. The example configuration points to the 375-record cleaned RSchema dataset and the two prompt files included in the clone. It allows up to three schema proposals per record and sets a 300-second timeout per model request. [Example configuration](.env.example) · [Pipeline documentation](pipeline/README.md)
 
-Leave the API key blank. `run_fir.slurm` supplies the Ollama backend, the model tag for each run, and the loopback endpoint. The job reads the dataset, prompts, retry limit, timeout, and debug setting from `.env`.
+The scripts supply the Ollama backend, model tag, and loopback endpoint. Each task reads the rest of the configuration from `.env` when it starts. Keep the checkout, input dataset, `.env`, and prompts fixed while tasks are queued or running so every task uses the same inputs and range boundaries.
 
 ## 4. Find or install Ollama on Fir
 
@@ -88,9 +86,9 @@ source ~/.bash_profile
 command -v ollama
 ```
 
-The check should print `$HOME/.local/ollama/bin/ollama` with your actual home directory. Future Bash logins pick up this path, and `run_fir.slurm` can find Ollama by name.
+The check should print `$HOME/.local/ollama/bin/ollama` with your actual home directory. Future Bash logins pick up this path, and both Slurm scripts can find Ollama by name.
 
-Allow at least 85 GB of free scratch space for a fresh model cache. The three downloads total about 76 GB. The job pulls missing models on the compute node and reuses files in `$SCRATCH/ollama-models`. [Fir compute-node access and storage](https://ualberta-rcg.github.io/ragflow-wiki-data/base/software/fir/) · [Qwen 3.8 download size](https://ollama.com/library/qwen3.8:27b-q8_0) · [Qwen 3.5 download sizes](https://ollama.com/library/qwen3.5/tags)
+Allow at least 85 GB of free scratch space for a fresh model cache. The three downloads total about 76 GB. Tasks reuse `$SCRATCH/ollama-models` by default. If models are missing, tasks download them on the compute nodes one at a time under a shared cache lock. [Fir compute-node access and storage](https://ualberta-rcg.github.io/ragflow-wiki-data/base/software/fir/) · [Qwen 3.8 download size](https://ollama.com/library/qwen3.8:27b-q8_0) · [Qwen 3.5 download sizes](https://ollama.com/library/qwen3.5/tags)
 
 The job sets a 32,768-token (32K) context for all three models by default. Set `OLLAMA_CONTEXT_LENGTH` in the submission environment to override it. [Ollama context settings](https://docs.ollama.com/context-length)
 
@@ -98,37 +96,51 @@ The job sets a 32,768-token (32K) context for all three models by default. Set `
 
 Replace `YOUR_FIR_GPU_ACCOUNT` with the Slurm account for your Fir GPU project. To see your account associations, run `sshare -U -u "$USER" -P -o Account,User`. The project group name is also listed in CCDB under **My Projects → My Resources and Allocations**. [Alliance Slurm account guide](https://ualberta-rcg.github.io/ragflow-wiki-data/base/running-jobs/running_jobs/#accounts-and-projects)
 
-For the first debug run, use `debug=true` and request four hours. Debug mode runs up to three specifications per model. Across all three models, the pipeline can make up to 36 requests. If each takes close to five minutes, that uses about three hours, leaving time for server startup and downloads.
+Submit the 35B and 27B array first. Each of the eight tasks requests 24 hours and runs one model over one chunk. Up to four tasks can run at once, subject to Fir availability and your account limits. [Slurm job arrays](https://slurm.schedmd.com/job_array.html)
 
 ```bash
 cd "$SCRATCH/text2schema"
-sbatch --account=YOUR_FIR_GPU_ACCOUNT --time=04:00:00 run_fir.slurm
+sbatch --account=YOUR_FIR_GPU_ACCOUNT run_fir_qwen_27b_35b.slurm
 ```
 
-For the full run, set `debug=false` and submit using the script's default three-day wall time. You can override it with `--time` if needed.
+When you are ready to queue the 9B, submit its separate array. Each task requests 72 hours and the default permits one 9B task at a time.
 
 ```bash
-sbatch --account=YOUR_FIR_GPU_ACCOUNT run_fir.slurm
+sbatch --account=YOUR_FIR_GPU_ACCOUNT run_fir_qwen_9b.slurm
+```
+
+Tasks compute four balanced chunks from the nonblank records in the configured JSONL. For the default dataset, the inclusive ranges and task IDs are as follows.
+
+| Records | 35B task | 27B task | 9B task in its own array |
+| --- | --- | --- | --- |
+| 1–94 | 0 | 1 | 0 |
+| 95–188 | 2 | 3 | 1 |
+| 189–282 | 4 | 5 | 2 |
+| 283–375 | 6 | 7 | 3 |
+
+To rerun a task, pass its original task ID with `--array`. This example reruns records 95–188 for the 27B on the default dataset.
+
+```bash
+sbatch --account=YOUR_FIR_GPU_ACCOUNT --array=3 run_fir_qwen_27b_35b.slurm
 ```
 
 ## 6. Check logs and results
 
-Replace `JOB_ID` with the ID printed by `sbatch`. The log files are created in the project root once the job starts. [Slurm job accounting](https://slurm.schedmd.com/sacct.html)
+Set `array_job_id` to the ID printed by `sbatch`. The log files appear in the project root as tasks start. This example follows priority task `0`. [Slurm job accounting](https://slurm.schedmd.com/sacct.html)
 
 ```bash
-squeue -j JOB_ID
-tail -f text2schema-qwen-JOB_ID.log
+array_job_id=ARRAY_JOB_ID
+squeue --array -j "$array_job_id"
+tail -f "text2schema-qwen-${array_job_id}_0.log"
 ```
 
-Read `ollama-JOB_ID.log` in the same directory for Ollama startup and inference details. Press **Ctrl+C** to stop following the log, then check the job state.
+The 9B logs use the prefix `text2schema-qwen-9b-`. Each task logs its model, record range, and separate Ollama log at startup. Press **Ctrl+C** to stop following the log, then check the task states.
 
 ```bash
-sacct -j JOB_ID --format=JobID,State,ExitCode,Elapsed
+sacct -j "$array_job_id" --format=JobID,State,ExitCode,Elapsed
 ```
 
-Each completed model publishes `results.csv` and `extraction_results.csv` under its own directory in `pipeline/results/`. Debug jobs use `pipeline/results/debug/`. The launcher replaces the colon in a model tag with a hyphen and adds a numeric suffix on repeat runs. A model can complete with unverified records or per-record errors. The job continues to the next model, and the CSVs record those outcomes. [Pipeline results guide](pipeline/README.md#read-the-results)
-
-A model download failure or a fatal pipeline failure makes the job exit with status `2` after it attempts the remaining models. Check the job log for the affected model.
+Each completed task publishes `results.csv` and `extraction_results.csv` in its own directory, such as `pipeline/results/qwen3.8-27b-q8_0-1_94/`. The reports retain the original input IDs and line numbers. A repeated range gets a run counter before the range suffix. A task can finish with unverified records or per-record errors, so check both CSVs. A model download failure or a fatal pipeline error fails that task. [Pipeline results guide](pipeline/README.md#read-the-results)
 
 ## 7. Download the results to your computer
 

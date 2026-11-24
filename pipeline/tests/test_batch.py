@@ -135,12 +135,12 @@ class BatchTests(unittest.TestCase):
         self.assertEqual(rows[1]["feedback"], rejection["feedback"])
         retry_payload = json.loads(llm.calls[2][1]["content"])
         self.assertEqual(retry_payload["functional_dependencies"], DEPENDENCIES)
-        self.assertEqual(retry_payload["previous_schema"], FAILING_SCHEMA)
-        self.assertEqual(retry_payload["feedback"], rejection["feedback"])
+        self.assertEqual(retry_payload["attempt_history"], [
+            {"iteration": 1, "relational_schema": FAILING_SCHEMA, "feedback": rejection["feedback"]},
+        ])
         next_case_payload = json.loads(llm.calls[4][1]["content"])
         self.assertEqual(next_case_payload["database_specification"], second_spec)
-        self.assertNotIn("previous_schema", next_case_payload)
-        self.assertNotIn("feedback", next_case_payload)
+        self.assertNotIn("attempt_history", next_case_payload)
 
         self.assertTrue(json.loads(rows[2]["verification"])["verified"])
         self.assertFalse(json.loads(rows[5]["verification"])["verified"])

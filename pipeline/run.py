@@ -160,7 +160,7 @@ def run_pipeline(
     to capture token usage from hosted providers or Ollama. The
     first call extracts attribute names, SQL types, and FDs. All subsequent
     calls use that fixed extraction and the original specification. Revisions
-    also receive the previous candidate and its latest feedback.
+    also receive the numbered schema attempts and their feedback in order.
 
     ``max_iterations`` is the positive number of schema proposals permitted,
     including the initial one. The returned JSON-serializable dictionary has
@@ -202,6 +202,15 @@ def run_pipeline(
 
     attempts = []
     for iteration in range(1, max_iterations + 1):
+        if attempts:
+            inputs["attempt_history"] = [
+                {
+                    "iteration": attempt["iteration"],
+                    "relational_schema": attempt["relational_schema"],
+                    "feedback": attempt["feedback"],
+                }
+                for attempt in attempts
+            ]
         messages = _messages(schema_prompt, inputs)
         response = None
         schema = ""
@@ -237,7 +246,6 @@ def run_pipeline(
               feedback=feedback, verification=verification, create_queries=queries)
         if verified:
             break
-        inputs.update(previous_schema=schema, feedback=feedback)
 
     return {
         "verified": verified,

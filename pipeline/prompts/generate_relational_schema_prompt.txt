@@ -12,9 +12,13 @@ and underscores, starting with a letter or underscore. Table names must be uniqu
 case is ignored and must avoid the reserved sqlite_ prefix.
 
 Omit headings, bullets, explanations, Markdown fences, and trailing semicolons. Output only
-the declarations, without JSON, SQL, data types, or foreign key annotations. If the input
-contains previous_schema and feedback, address the feedback and return the complete revised
-schema in the same format.
+the declarations, without JSON, SQL, data types, or foreign key annotations.
+
+On a revision, attempt_history lists all earlier proposals in iteration order, with the
+latest proposal last. Each entry gives the iteration number, the relational_schema proposed
+in that iteration, and the verifier or pipeline feedback for that schema. Address the
+latest feedback, use earlier feedback to avoid repeating mistakes, and return the complete
+revised schema in the same format.
 
 Example 1 input fields
 {

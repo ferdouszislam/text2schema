@@ -18,6 +18,7 @@ EXTRACTION = json.dumps({
     "functional_dependencies": DEPENDENCIES,
 })
 FAILING_SCHEMA = "Record(<u>A</u>, B, C, <u>Notes</u>)"
+PARTIALLY_REVISED_SCHEMA = "Record(<u>A</u>, <u>Notes</u>)\nMapping(<u>A</u>, B, C)"
 VERIFIED_SCHEMA = """\
 Record(<u>A</u>, <u>Notes</u>)
 Mapping(<u>A</u>, B)
@@ -39,12 +40,23 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual([message["role"] for message in messages], ["system", "user"])
         return json.loads(messages[1]["content"])
 
+    def assert_attempt_history(self, messages, *attempts):
+        self.assertEqual(self.user_payload(messages)["attempt_history"], [
+            {
+                "iteration": attempt["iteration"],
+                "relational_schema": attempt["relational_schema"],
+                "feedback": attempt["feedback"],
+            }
+            for attempt in attempts
+        ])
+
     def test_verifier_feedback_leads_to_executable_create_queries(self):
         raw_extraction = f"```json\n{EXTRACTION}\n```"
         raw_schema = f"```text\n{VERIFIED_SCHEMA}\n```"
         llm = ScriptedLLM(
             LLMResponse(raw_extraction, input_tokens=13, output_tokens=6, total_tokens=19),
             FAILING_SCHEMA,
+            PARTIALLY_REVISED_SCHEMA,
             LLMResponse(text=raw_schema, input_tokens=43, output_tokens=0, total_tokens=43),
         )
         events = []
@@ -54,34 +66,41 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(result["attribute_types"], ATTRIBUTE_TYPES)
         self.assertEqual(result["functional_dependencies"], DEPENDENCIES)
         self.assertEqual(result["relational_schema"], VERIFIED_SCHEMA)
-        self.assertEqual(len(llm.calls), 3)
+        self.assertEqual(len(llm.calls), 4)
         event_statuses = [(event["stage"], event["iteration"], event["status"]) for event in events]
         self.assertEqual(event_statuses, [
-            ("extraction", 0, "extracted"), ("schema", 1, "rejected"), ("schema", 2, "verified"),
+            ("extraction", 0, "extracted"), ("schema", 1, "rejected"),
+            ("schema", 2, "rejected"), ("schema", 3, "verified"),
         ])
         self.assertEqual([event["prompt"] for event in events], llm.calls)
         self.assertEqual([event["model_response"] for event in events],
-                         [raw_extraction, FAILING_SCHEMA, raw_schema])
+                         [raw_extraction, FAILING_SCHEMA, PARTIALLY_REVISED_SCHEMA, raw_schema])
         token_columns = ("input_tokens", "output_tokens", "total_tokens")
         self.assertEqual([tuple(event.get(column) for column in token_columns) for event in events],
-                         [(13, 6, 19), (None, None, None), (43, 0, 43)])
+                         [(13, 6, 19), (None, None, None), (None, None, None), (43, 0, 43)])
         self.assertEqual(self.user_payload(llm.calls[0])["database_specification"], SPECIFICATION)
-        first_proposal = self.user_payload(llm.calls[1])
-        revised_proposal = self.user_payload(llm.calls[2])
-        for payload in (first_proposal, revised_proposal):
+        self.assertNotIn("attempt_history", self.user_payload(llm.calls[1]))
+        for messages in llm.calls[1:]:
+            payload = self.user_payload(messages)
             self.assertEqual(payload["database_specification"], SPECIFICATION)
             self.assertCountEqual(payload["attributes"], ATTRIBUTE_TYPES)
             self.assertEqual(payload["functional_dependencies"], DEPENDENCIES)
 
-        first_attempt, successful_attempt = result["attempts"]
-        self.assertEqual(first_attempt["iteration"], 1)
-        self.assertEqual(successful_attempt["iteration"], 2)
-        self.assertEqual(first_attempt["relational_schema"], FAILING_SCHEMA)
-        expected_verification = verify_schema(FAILING_SCHEMA, DEPENDENCIES)
-        self.assertEqual(first_attempt["verification"], expected_verification)
-        self.assertEqual(first_attempt["feedback"], expected_verification["feedback"])
-        self.assertEqual(revised_proposal["previous_schema"], FAILING_SCHEMA)
-        self.assertEqual(revised_proposal["feedback"], expected_verification["feedback"])
+        first_attempt, second_attempt, successful_attempt = result["attempts"]
+        for iteration, schema, attempt in (
+            (1, FAILING_SCHEMA, first_attempt),
+            (2, PARTIALLY_REVISED_SCHEMA, second_attempt),
+        ):
+            with self.subTest(iteration=iteration):
+                self.assertEqual(attempt["iteration"], iteration)
+                self.assertEqual(attempt["relational_schema"], schema)
+                expected_verification = verify_schema(schema, DEPENDENCIES)
+                self.assertEqual(attempt["verification"], expected_verification)
+                self.assertEqual(attempt["feedback"], expected_verification["feedback"])
+        self.assertNotEqual(first_attempt["feedback"], second_attempt["feedback"])
+        self.assert_attempt_history(llm.calls[2], first_attempt)
+        self.assert_attempt_history(llm.calls[3], first_attempt, second_attempt)
+        self.assertEqual(successful_attempt["iteration"], 3)
         self.assertTrue(successful_attempt["verification"]["verified"])
 
         rejected_queries = generate_create_queries(FAILING_SCHEMA, ATTRIBUTE_TYPES)
@@ -89,7 +108,7 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(events[1]["create_queries"], rejected_queries)
         queries = result["create_queries"]
         self.assertEqual(successful_attempt["create_queries"], queries)
-        self.assertEqual(events[2]["create_queries"], queries)
+        self.assertEqual(events[3]["create_queries"], queries)
         self.assertEqual(len(queries), 3)
         with closing(sqlite3.connect(":memory:")) as connection:
             connection.executescript("\n".join(queries))
@@ -115,8 +134,8 @@ class PipelineTests(unittest.TestCase):
             missing, {"A": "INTEGER", "B": "INTEGER", "C": "TEXT"},
         ))
         self.assertEqual(extra_attempt["create_queries"], [])
-        self.assertEqual(self.user_payload(llm.calls[2])["feedback"], missing_attempt["feedback"])
-        self.assertEqual(self.user_payload(llm.calls[3])["feedback"], extra_attempt["feedback"])
+        self.assert_attempt_history(llm.calls[2], missing_attempt)
+        self.assert_attempt_history(llm.calls[3], missing_attempt, extra_attempt)
 
     def test_malformed_schema_and_sqlite_name_failure_can_be_revised(self):
         invalid_name = VERIFIED_SCHEMA.replace("Record(", "sqlite_Record(")
@@ -130,10 +149,8 @@ class PipelineTests(unittest.TestCase):
         self.assertTrue(reserved_name_attempt["verification"]["verified"])
         self.assertEqual(reserved_name_attempt["create_queries"], [])
         self.assertIn("sqlite_Record", reserved_name_attempt["feedback"])
-        self.assertEqual(self.user_payload(llm.calls[2])["feedback"], malformed_attempt["feedback"])
-        self.assertEqual(
-            self.user_payload(llm.calls[3])["feedback"], reserved_name_attempt["feedback"]
-        )
+        self.assert_attempt_history(llm.calls[2], malformed_attempt)
+        self.assert_attempt_history(llm.calls[3], malformed_attempt, reserved_name_attempt)
 
     def test_iteration_limit_counts_first_candidate_and_preserves_its_ddl(self):
         llm = ScriptedLLM(EXTRACTION, FAILING_SCHEMA)

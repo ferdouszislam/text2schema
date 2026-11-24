@@ -124,7 +124,11 @@ class LauncherTests(unittest.TestCase):
         ]
         self.assertEqual(submitted_specifications, [longest_specification, shortest_specification, middle_specification])
         retry_messages = llm.call_args_list[2].args[0]
-        self.assertIn("3NF", json.loads(retry_messages[1]["content"])["feedback"])
+        retry_history = json.loads(retry_messages[1]["content"])["attempt_history"]
+        self.assertEqual(len(retry_history), 1)
+        self.assertEqual(retry_history[0]["iteration"], 1)
+        self.assertEqual(retry_history[0]["relational_schema"], FAILING_SCHEMA)
+        self.assertIn("3NF", retry_history[0]["feedback"])
         extraction_rows = self.read_csv(self.debug_report_dir / self.extraction.name)
         self.assertEqual([(row["spec_id"], row["input_line"]) for row in extraction_rows],
                          [("longest", "6"), ("shortest", "2"), ("middle", "9")])

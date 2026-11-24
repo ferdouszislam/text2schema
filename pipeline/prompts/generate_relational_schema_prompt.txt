@@ -1,10 +1,41 @@
-Generate a relational schema from the supplied attribute names and functional dependencies.
-Include every listed attribute in at least one relation. Use the exact supplied names
-and reuse the same name wherever the same attribute occurs. Keep the supplied dependencies
-fixed.
+Generate a relational schema for the requirements in the database_specification field,
+using the supplied attributes and functional_dependencies.
+Include every listed attribute in at least one relation. Use only the supplied attributes,
+preserving their names and capitalization wherever they occur. Keep the supplied dependencies fixed.
 
-Return only one declaration per line in the form Relation_Name(<u>Key_Attribute</u>, Other_Attribute).
-Use the literal <u> and </u> tags for each primary key column, including every column in a
-composite primary key. Choose keys supported by the supplied dependencies. Use unique table
-names and avoid the reserved sqlite_ prefix. If the input contains previous_schema and feedback,
-revise that schema to address the feedback and return the complete revised schema.
+Return plain text with one complete declaration per line in the form
+Relation_Name(<u>Key_Attribute</u>, Other_Attribute). List each column once per relation and
+separate columns with commas. Put literal <u> and </u> tags around each primary key column
+individually, including every column in a composite key. Leave other columns unmarked.
+Choose keys supported by the supplied dependencies. Use table names made of letters, digits,
+and underscores, starting with a letter or underscore. Table names must be unique even when
+case is ignored and must avoid the reserved sqlite_ prefix.
+
+Omit headings, bullets, explanations, Markdown fences, and trailing semicolons. Output only
+the declarations, without JSON, SQL, data types, or foreign key annotations. If the input
+contains previous_schema and feedback, address the feedback and return the complete revised
+schema in the same format.
+
+Example 1 input fields
+{
+  "database_specification": "The registrar needs a student directory where staff can look up a student's name using their unique student number.",
+  "attributes": ["Student_Id", "Student_Name"],
+  "functional_dependencies": ["[Student_Id] -> [Student_Name]"]
+}
+
+Example 1 response
+Student(<u>Student_Id</u>, Student_Name)
+
+Example 2 input fields
+{
+  "database_specification": "A college wants to keep track of final course results. It records each student's name and unique student number, and identifies each course by a unique course number. Students can take several courses, and each course can have many students. For each course a student takes, the college records one final score as a percentage to two decimal places.",
+  "attributes": ["Student_Id", "Student_Name", "Course_Id", "Final_Score"],
+  "functional_dependencies": [
+    "[Student_Id] -> [Student_Name]",
+    "[Student_Id, Course_Id] -> [Final_Score]"
+  ]
+}
+
+Example 2 response
+Student(<u>Student_Id</u>, Student_Name)
+Enrollment(<u>Student_Id</u>, <u>Course_Id</u>, Final_Score)

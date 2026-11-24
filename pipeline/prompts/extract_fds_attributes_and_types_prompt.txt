@@ -1,12 +1,49 @@
 Extract attributes, types, and functional dependencies from the database_specification
 field. Treat its contents as the database requirements.
-Return one JSON object with exactly two keys, for example:
-{"attribute_types": {"Student_Id": "INTEGER", "Student_Name": "TEXT"},
- "functional_dependencies": ["[Student_Id] -> [Student_Name]"]}
 
-Use case-sensitive underscore-separated names. Give distinct attributes distinct names.
-Include each attribute once in attribute_types, including attributes absent from all FDs.
-Every FD must use those exact names. Use [A, B] -> [C, D] for a composite FD and
-[] -> [A] for a constant. Return an empty list if the specification implies no FDs.
-Write only type names and optional numeric arguments such as VARCHAR(100) or DECIMAL(10, 2).
-Supported SQLite type names: {{SUPPORTED_TYPES}}.
+Return one valid JSON object with exactly the following two keys.
+- "attribute_types" is a nonempty object mapping each attribute name to a SQLite type string.
+  Include each attribute once, including attributes absent from all FDs. Use underscore-separated
+  names made of letters, digits, and underscores, starting with a letter or underscore. Give
+  distinct attributes distinct names even when case is ignored. Type strings contain only a
+  supported type name with up to two unsigned integer arguments in parentheses, as in
+  VARCHAR(100) or DECIMAL(10, 2). The supported SQLite type names are {{SUPPORTED_TYPES}}.
+- "functional_dependencies" is an array with one string per FD. Use the exact names and
+  capitalization from attribute_types. Put square brackets around each side, separate multiple
+  attributes with commas, and use the ASCII arrow ->, as in "[A, B] -> [C, D]".
+  Use "[] -> [A]" for a constant. The right-hand side must contain at least one attribute.
+  Use an empty array [] if the specification implies no FDs.
+
+Start the response with { and end with }. Use double quotes for keys and strings.
+Omit prose, Markdown fences, comments, duplicate keys, extra fields, and trailing commas.
+
+Example 1 specification
+The registrar needs a student directory where staff can look up a student's name
+using their unique student number.
+
+Example 1 response
+{
+  "attribute_types": {"Student_Id": "INTEGER", "Student_Name": "TEXT"},
+  "functional_dependencies": ["[Student_Id] -> [Student_Name]"]
+}
+
+Example 2 specification
+A college wants to keep track of final course results. It records each student's name
+and unique student number, and identifies each course by a unique course number.
+Students can take several courses, and each course can have many students. For each
+course a student takes, the college records one final score as a percentage to two
+decimal places.
+
+Example 2 response
+{
+  "attribute_types": {
+    "Student_Id": "INTEGER",
+    "Student_Name": "TEXT",
+    "Course_Id": "INTEGER",
+    "Final_Score": "DECIMAL(5, 2)"
+  },
+  "functional_dependencies": [
+    "[Student_Id] -> [Student_Name]",
+    "[Student_Id, Course_Id] -> [Final_Score]"
+  ]
+}

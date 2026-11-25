@@ -12,6 +12,8 @@ python run_pipeline.py
 
 The script prints the batch counts. Exit status `0` means every record verified, `1` means at least one record ended with `exhausted`, `early-stop`, or an error, and `2` means setup or the batch itself failed.
 
+Hosted OpenAI and Gemini use their Batch APIs on their native endpoints. [Provider Batch API jobs](PIPELINE-EXPLAINED.md#provider-batch-api-jobs)
+
 ### Override model settings for one run
 
 Each flag overrides its matching `.env` setting for that run. Omitted flags use the values from `.env`.
@@ -57,19 +59,19 @@ The input is UTF-8 JSONL with one JSON object per line. The default fields match
 | `PIPELINE_MODEL` | `--model` | Set an installed Ollama model tag or a LiteLLM `provider/model` name. |
 | `PIPELINE_API_KEY` | `--api-key` | Supply an API key when needed. |
 | `PIPELINE_API_BASE` | `--api-base` | Override the model endpoint. |
-| `PIPELINE_TIMEOUT_SECONDS` | `--timeout-seconds` | Set the model request timeout in seconds. |
-| `PIPELINE_REQUEST_DELAY_SECONDS` | | Set the minimum pause between model requests in seconds. Defaults to `3`. Set `0` to disable the pause. |
-| `PIPELINE_HOSTED_503_RETRIES` | `--hosted-503-retries` | Set the number of additional attempts after HTTP 503 on a hosted extraction or schema request. Defaults to `2`. Set `0` to disable these retries. |
+| `PIPELINE_TIMEOUT_SECONDS` | `--timeout-seconds` | Set the timeout for each HTTP request in seconds. |
+| `PIPELINE_REQUEST_DELAY_SECONDS` | | Set the minimum request pause in seconds. Defaults to `3`. Set `0` to disable the pause. |
+| `PIPELINE_HOSTED_503_RETRIES` | `--hosted-503-retries` | Set the number of additional attempts after HTTP 503 on eligible hosted requests. Defaults to `2`. Set `0` to disable these retries. |
 | `PIPELINE_MAX_ITERATIONS` | `--max-iterations` | Set the total proposal limit per specification. |
 | `PIPELINE_EXTRACTION_PROMPT`, `PIPELINE_SCHEMA_PROMPT` | | Select the editable prompt files. |
 
 Relative paths are resolved from the project root.
 
-The first model request starts immediately. The delay runs from the end of a request, including a failed request, to the start of the next request in the batch. Both backends accept finite, nonnegative values in seconds, including fractional values.
+The request delay accepts finite, nonnegative seconds, including fractions.
 
-Hosted HTTP 503 retries use exponential backoff with jitter and respect the minimum request pause. The launcher reports each retry and its wait time in the live progress log. [Hosted HTTP 503 retries](PIPELINE-EXPLAINED.md#hosted-http-503-retries)
+Hosted HTTP 503 retries use exponential backoff with jitter. The launcher reports each retry and its wait time in the live progress log. [Hosted HTTP 503 retries](PIPELINE-EXPLAINED.md#hosted-http-503-retries)
 
-For the default Ollama configuration, start the server and run `ollama pull qwen3:8b`. The default endpoint is `http://127.0.0.1:11434`. For a hosted model, set `PIPELINE_BACKEND=hosted`, choose a model such as `openai/gpt-4o-mini`, and supply its credentials. For a custom OpenAI-compatible endpoint, use `openai/<model>` and set `PIPELINE_API_BASE` to the endpoint base URL. [Ollama API](https://docs.ollama.com/api/chat) · [LiteLLM providers and credentials](https://docs.litellm.ai/docs/providers) · [OpenAI-compatible endpoints](https://docs.litellm.ai/docs/providers/openai_compatible)
+For Ollama, start the server and pull the configured model. The default endpoint is `http://127.0.0.1:11434`. Other hosted providers, including Anthropic, use standard LiteLLM requests. For a custom OpenAI-compatible endpoint, use `openai/<model>` and set `PIPELINE_API_BASE` to the endpoint base URL. [Ollama API](https://docs.ollama.com/api/chat) · [LiteLLM providers and credentials](https://docs.litellm.ai/docs/providers) · [OpenAI-compatible endpoints](https://docs.litellm.ai/docs/providers/openai_compatible)
 
 Edit the selected prompt files to change the model instructions. The pipeline fills `{{SUPPORTED_TYPES}}` in the extraction prompt with the generator's supported SQLite type names. [Extraction prompt](prompts/extract_fds_attributes_and_types_prompt.txt) · [Schema prompt](prompts/generate_relational_schema_prompt.txt)
 

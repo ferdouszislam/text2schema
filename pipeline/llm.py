@@ -6,6 +6,7 @@ import json
 from http.client import HTTPException
 import logging
 from math import isfinite
+from os import getenv
 from random import uniform
 from time import monotonic, sleep
 from urllib.error import HTTPError, URLError
@@ -14,6 +15,7 @@ from urllib.request import Request, urlopen
 
 
 DEFAULT_HOSTED_503_RETRIES = 2
+DEFAULT_BATCH_TIMEOUT_SECONDS = 49 * 60 * 60
 _LOGGER = logging.getLogger(__name__)
 _NO_TEXT = "The model returned no assistant text. Check that it supports text chat."
 _MISSING = object()
@@ -45,6 +47,8 @@ class LLMClient:
     ``request_delay_seconds`` to wait between calls made by this client.
     ``hosted_503_retries`` sets how many times to resend a hosted request
     after HTTP 503. Set it to zero for a single attempt.
+    The pipeline uses ``batch_completion`` for native OpenAI and Gemini jobs.
+    ``batch_timeout_seconds`` sets the polling limit per job.
 
     Call the client with a list of ``{"role": ..., "content": ...}`` messages
     to get nonblank assistant text. Use ``complete`` to also get token counts
@@ -61,6 +65,7 @@ class LLMClient:
         timeout: float = 120,
         request_delay_seconds: float = 0,
         hosted_503_retries: int = DEFAULT_HOSTED_503_RETRIES,
+        batch_timeout_seconds: float = DEFAULT_BATCH_TIMEOUT_SECONDS,
     ):
         if not isinstance(model, str) or not model.strip():
             raise ValueError("Provide an LLM model name.")
@@ -78,6 +83,9 @@ class LLMClient:
             raise ValueError("The LLM request delay must be a finite, nonnegative number of seconds.")
         if type(hosted_503_retries) is not int or hosted_503_retries < 0:
             raise ValueError("The hosted HTTP 503 retry count must be a nonnegative integer.")
+        if (not isinstance(batch_timeout_seconds, (float, int))
+                or not isfinite(batch_timeout_seconds) or batch_timeout_seconds <= 0):
+            raise ValueError("The provider batch timeout must be a positive number of seconds.")
         if api_key is not None and (
             not isinstance(api_key, str) or not api_key.strip() or "\r" in api_key or "\n" in api_key
         ):
@@ -92,7 +100,41 @@ class LLMClient:
         self._api_key = api_key
         self._request_delay_seconds = request_delay_seconds
         self._hosted_503_retries = hosted_503_retries
+        self._batch_timeout_seconds = batch_timeout_seconds
         self._last_request_finished: float | None = None
+
+    def batch_completion(self):
+        """Return the native batch method for a supported hosted endpoint."""
+        if self.backend != "hosted":
+            return None
+        provider, _, model = self.model.partition("/")
+        if provider == "openai":
+            api_base = self.api_base or getenv("OPENAI_BASE_URL") or getenv("OPENAI_API_BASE")
+            if api_base and api_base.rstrip("/") != "https://api.openai.com/v1":
+                return None
+            from pipeline.openai_batch import OpenAIBatchClient
+
+            client_type = OpenAIBatchClient
+        elif provider == "gemini":
+            api_base = self.api_base or getenv("GEMINI_API_BASE")
+            if api_base and api_base.rstrip("/") not in (
+                "https://generativelanguage.googleapis.com",
+                "https://generativelanguage.googleapis.com/v1beta",
+            ):
+                return None
+            from pipeline.gemini_batch import GeminiBatchClient
+
+            client_type = GeminiBatchClient
+        else:
+            return None
+
+        from pipeline.batch_api import BatchControl
+
+        control = BatchControl(
+            timeout=self.timeout, batch_timeout=self._batch_timeout_seconds,
+            request_delay=self._request_delay_seconds, retries=self._hosted_503_retries,
+        )
+        return client_type(model, api_key=self._api_key, control=control).complete_batch
 
     def __call__(self, messages: list[dict[str, str]]) -> str:
         text = self.complete(messages).text

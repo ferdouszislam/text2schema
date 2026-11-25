@@ -1,17 +1,21 @@
 """Run the pipeline for each JSONL specification and write CSV traces."""
 
 from collections.abc import Callable, Iterable, Iterator
+from contextlib import ExitStack
 import csv
+from dataclasses import dataclass, field
+from itertools import islice
 import json
 import logging
 from pathlib import Path
 from shutil import copy2
 from tempfile import TemporaryDirectory
 
-from pipeline.llm import LLMResponse
+from pipeline.llm import LLMClient, LLMError, LLMResponse
 from pipeline.run import (
     DEFAULT_MAX_ITERATIONS,
     ExtractionError,
+    _pipeline_steps,
     load_prompts,
     run_pipeline,
     validate_iteration_limit,
@@ -19,6 +23,7 @@ from pipeline.run import (
 
 
 _LOGGER = logging.getLogger(__name__)
+_BATCH_RECORD_LIMIT = 1000
 _TOKEN_COLUMNS = ("input_tokens", "output_tokens", "total_tokens")
 CSV_COLUMNS = (
     "spec_id", "input_line", "stage", "iteration", "status", "database_specification",
@@ -130,17 +135,23 @@ def _select_records_by_word_count(
     return [(line_number, line) for _, line_number, line in selected]
 
 
-def _run_record(line, line_number, writers, llm, specification_field, id_field, pipeline_options):
+def _read_record(line, line_number, specification_field, id_field):
     spec_id = f"line-{line_number}"
     try:
         record = _parse_record(line)
         record_id = record.get(id_field)
         if (isinstance(record_id, str) and record_id.strip()) or type(record_id) is int:
             spec_id = str(record_id)
-        specification = _read_specification(record, specification_field)
+        return spec_id, _read_specification(record, specification_field), None
     except ValueError as error:
         _LOGGER.info("Input error on line %d: %s", line_number, error)
-        _write_event(writers, spec_id, line_number, {"stage": "input", "status": "error", "feedback": str(error)})
+        return spec_id, None, {"stage": "input", "status": "error", "feedback": str(error)}
+
+
+def _run_record(line, line_number, writers, llm, specification_field, id_field, pipeline_options):
+    spec_id, specification, error = _read_record(line, line_number, specification_field, id_field)
+    if error is not None:
+        _write_event(writers, spec_id, line_number, error)
         return "errors"
 
     def record_event(event):
@@ -153,6 +164,67 @@ def _run_record(line, line_number, writers, llm, specification_field, id_field, 
         # The pipeline has already emitted an event for the failed stage.
         return "errors"
     return result["status"]
+
+
+@dataclass
+class _BatchRecord:
+    spec_id: str
+    line_number: int
+    specification: str | None
+    events: list[dict] = field(default_factory=list)
+    status: str = "errors"
+
+
+def _run_provider_batches(records, writers, complete_batch, specification_field, id_field, pipeline_options):
+    """Advance records in rounds, with one pending prompt per active record."""
+    records = iter(records)
+    while group := list(islice(records, _BATCH_RECORD_LIMIT)):
+        group_records = []
+        pending = {}
+        with ExitStack() as stack:
+            for line_number, line in group:
+                spec_id, specification, error = _read_record(line, line_number, specification_field, id_field)
+                record = _BatchRecord(spec_id, line_number, specification)
+                group_records.append(record)
+                if error is not None:
+                    record.events.append(error)
+                    continue
+                steps = _pipeline_steps(specification, on_event=record.events.append, **pipeline_options)
+                stack.callback(steps.close)
+                pending[f"line-{line_number}"] = (record, steps, next(steps))
+
+            round_number = 0
+            while pending:
+                stage = f"schema attempt {round_number}" if round_number else "extraction"
+                _LOGGER.info("Submitting %d provider batch request(s) for %s.", len(pending), stage)
+                requests = {key: [message.copy() for message in messages]
+                            for key, (_, _, messages) in pending.items()}
+                responses = complete_batch(requests)
+                next_round = {}
+                for key, (record, steps, _) in pending.items():
+                    response = responses.get(key)
+                    if response is None:
+                        response = LLMError(f"The provider batch did not return a result for {key}.")
+                    try:
+                        if isinstance(response, LLMError):
+                            messages = steps.throw(response)
+                        else:
+                            messages = steps.send(response)
+                    except StopIteration as finished:
+                        record.status = finished.value["status"]
+                    except (ExtractionError, RuntimeError):
+                        # The pipeline has recorded the failure for this stage.
+                        record.status = "errors"
+                    else:
+                        next_round[key] = (record, steps, messages)
+                pending = next_round
+                round_number += 1
+
+        for record in group_records:
+            for event in record.events:
+                specification = record.specification if event["stage"] == "extraction" else ""
+                _write_event(writers, record.spec_id, record.line_number, event, specification)
+            yield record.status
 
 
 def default_extraction_csv(output_csv: str | Path) -> Path:
@@ -259,9 +331,20 @@ def run_batch(
                 writers = results_writer, extraction_writer
                 for writer in writers:
                     writer.writeheader()
-                for line_number, line in records:
-                    _LOGGER.info("Processing record %d (input line %d)", counts["records"] + 1, line_number)
-                    status = _run_record(line, line_number, writers, llm, specification_field, id_field, pipeline_options)
+                complete_batch = llm.batch_completion() if isinstance(llm, LLMClient) else None
+                if complete_batch is None:
+                    def process_records():
+                        for line_number, line in records:
+                            _LOGGER.info("Processing record %d (input line %d)", counts["records"] + 1, line_number)
+                            yield _run_record(line, line_number, writers, llm, specification_field, id_field,
+                                              pipeline_options)
+
+                    statuses = process_records()
+                else:
+                    statuses = _run_provider_batches(
+                        records, writers, complete_batch, specification_field, id_field, pipeline_options,
+                    )
+                for status in statuses:
                     counts["records"] += 1
                     counts[status] += 1
             if not counts["records"]:

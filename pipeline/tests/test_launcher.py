@@ -319,25 +319,25 @@ class LauncherTests(unittest.TestCase):
         cases = [
             (
                 ["--model", "other-local-model:latest"],
-                ("other-local-model:latest", "ollama", "file-key", "http://file.example", 12.0, 2, 3),
+                ("other-local-model:latest", "ollama", "file-key", "http://file.example", 12.0, 2, 3, 176400.0),
                 "other-local-model-latest",
             ),
             (
                 ["--backend", "hosted", "--model", "openai/test-model", "--api-key", "cli-key",
                  "--api-base", "https://cli.example/v1", "--timeout-seconds", "4.5",
-                 "--max-iterations", "5", "--hosted-503-retries", "0"],
-                ("openai/test-model", "hosted", "cli-key", "https://cli.example/v1", 4.5, 5, 0),
+                 "--max-iterations", "5", "--hosted-503-retries", "0", "--batch-timeout-seconds", "95000"],
+                ("openai/test-model", "hosted", "cli-key", "https://cli.example/v1", 4.5, 5, 0, 95000.0),
                 "openai-test-model",
             ),
             (
                 ["--api-key", "", "--api-base", ""],
-                ("test-model", "ollama", None, None, 12.0, 2, 3),
+                ("test-model", "ollama", None, None, 12.0, 2, 3, 176400.0),
                 "test-model",
             ),
         ]
         batch_results = {"records": 1, "verified": 1, "exhausted": 0, "early-stop": 0, "errors": 0}
         for args, expected, folder in cases:
-            model, backend, api_key, api_base, timeout, max_iterations, hosted_503_retries = expected
+            model, backend, api_key, api_base, timeout, max_iterations, hosted_503_retries, batch_timeout = expected
             with (self.subTest(args=args), patch("pipeline.llm.LLMClient") as client,
                   patch("pipeline.batch.run_batch", return_value=batch_results) as batch,
                   patch.object(sys, "argv", [str(script), *args]), redirect_stdout(StringIO())):
@@ -348,6 +348,7 @@ class LauncherTests(unittest.TestCase):
                 client.assert_called_once_with(
                     model, backend=backend, api_key=api_key, api_base=api_base, timeout=timeout,
                     request_delay_seconds=3.0, hosted_503_retries=hosted_503_retries,
+                    batch_timeout_seconds=batch_timeout,
                 )
                 report_dir = self.report_root / folder
                 self.assertEqual(batch.call_args.args[1], report_dir / self.results.name)

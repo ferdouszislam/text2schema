@@ -204,12 +204,49 @@ def run_pipeline(
     Invalid extraction raises ``ExtractionError``. Model and solver errors
     propagate to the caller.
     """
+    steps = _pipeline_steps(
+        database_specification, max_iterations=max_iterations, extraction_prompt=extraction_prompt,
+        schema_prompt=schema_prompt, on_event=on_event,
+    )
+    try:
+        messages = next(steps)
+        if isinstance(llm, LLMClient):
+            complete_batch = llm.batch_completion()
+            llm = llm.complete
+            if complete_batch is not None:
+                def complete_one(messages):
+                    result = complete_batch({"request": messages}).get("request")
+                    if isinstance(result, LLMError):
+                        raise result
+                    if result is None:
+                        raise LLMError("The provider batch did not return the request result.")
+                    return result
+
+                llm = complete_one
+
+        while True:
+            try:
+                response = _request(llm, messages)
+            except RuntimeError as error:
+                try:
+                    messages = steps.throw(error)
+                except StopIteration as finished:
+                    return finished.value
+            else:
+                try:
+                    messages = steps.send(response)
+                except StopIteration as finished:
+                    return finished.value
+    finally:
+        steps.close()
+
+
+def _pipeline_steps(database_specification, *, max_iterations, extraction_prompt, schema_prompt, on_event):
+    """Yield each prompt and resume with its response or a request error."""
     if not isinstance(database_specification, str) or not database_specification.strip():
         raise ValueError("Database specification must be nonempty text.")
     validate_iteration_limit(max_iterations)
     extraction_prompt, schema_prompt = load_prompts(extraction_prompt, schema_prompt)
-    if isinstance(llm, LLMClient):
-        llm = llm.complete
 
     pipeline_started_at = monotonic()
     inputs = {"database_specification": database_specification}
@@ -220,7 +257,7 @@ def run_pipeline(
     started_at = monotonic()
     try:
         with _measure(timings, "llm_seconds"):
-            response = _request(llm, messages)
+            response = yield messages
         types, dependencies = _extract(response.text)
     except (ExtractionError, RuntimeError) as error:
         _emit(on_event, "extraction", 0, "error", messages, response, started_at=started_at,
@@ -254,7 +291,7 @@ def run_pipeline(
         started_at = monotonic()
         try:
             with _measure(timings, "llm_seconds"):
-                response = _request(llm, messages)
+                response = yield messages
             schema = _unwrap(response.text)
             queries, feedback, ddl_feedback, schema_structure = _prepare_candidate(schema, types, timings)
             verification = None

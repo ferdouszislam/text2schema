@@ -12,7 +12,7 @@ from time import monotonic
 from dotenv import dotenv_values
 
 from pipeline.batch import count_input_records, default_extraction_csv, run_batch, validate_record_range
-from pipeline.llm import DEFAULT_HOSTED_503_RETRIES, LLMClient
+from pipeline.llm import DEFAULT_BATCH_TIMEOUT_SECONDS, DEFAULT_HOSTED_503_RETRIES, LLMClient
 
 
 _ROOT = Path(__file__).resolve().parent
@@ -127,6 +127,12 @@ def main(
                 raise ValueError
         except ValueError:
             raise ValueError("PIPELINE_HOSTED_503_RETRIES must be a nonnegative integer.") from None
+        try:
+            batch_timeout = float(settings.get("PIPELINE_BATCH_TIMEOUT_SECONDS", str(DEFAULT_BATCH_TIMEOUT_SECONDS)) or "")
+            if not isfinite(batch_timeout) or batch_timeout <= 0:
+                raise ValueError
+        except ValueError:
+            raise ValueError("PIPELINE_BATCH_TIMEOUT_SECONDS must be a positive number.") from None
 
         extraction_path = _ROOT / _required(settings, "PIPELINE_EXTRACTION_PROMPT")
         schema_path = _ROOT / _required(settings, "PIPELINE_SCHEMA_PROMPT")
@@ -135,6 +141,7 @@ def main(
         llm = LLMClient(
             model, backend=backend, api_key=api_key, api_base=api_base, timeout=timeout,
             request_delay_seconds=request_delay, hosted_503_retries=hosted_503_retries,
+            batch_timeout_seconds=batch_timeout,
         )
         run_directory = _create_run_directory(model, debug=debug, record_range=record_range)
         output_csv = run_directory / "results.csv"
@@ -195,6 +202,8 @@ if __name__ == "__main__":
                         help="Model request timeout in seconds.")
     parser.add_argument("--hosted-503-retries", dest="PIPELINE_HOSTED_503_RETRIES", metavar="COUNT",
                         help="Retries per hosted request after HTTP 503. Defaults to 2 if unset in .env.")
+    parser.add_argument("--batch-timeout-seconds", dest="PIPELINE_BATCH_TIMEOUT_SECONDS", metavar="SECONDS",
+                        help="Maximum wait per provider batch job. Defaults to 176400 seconds (49 hours).")
     parser.add_argument("--max-iterations", dest="PIPELINE_MAX_ITERATIONS", metavar="COUNT",
                         help="Maximum schema proposals per specification.")
     parser.add_argument("--start-index", type=int, metavar="INDEX",

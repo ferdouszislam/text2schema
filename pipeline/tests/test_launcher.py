@@ -163,7 +163,7 @@ class LauncherTests(unittest.TestCase):
     def test_launcher_reports_early_stop_with_an_unverified_exit_code(self):
         self.configure(max_iterations=4)
         self.write_records({"case": "repeated", "requirements": "A determines B and B determines C."})
-        llm = Mock(side_effect=[EXTRACTION, FAILING_SCHEMA, FAILING_SCHEMA])
+        llm = Mock(side_effect=[EXTRACTION, FAILING_SCHEMA, FAILING_SCHEMA, FAILING_SCHEMA])
         stdout = StringIO()
         with (patch.object(launcher, "_ROOT", self.directory),
               patch.object(launcher, "LLMClient", return_value=llm), redirect_stdout(stdout)):
@@ -171,6 +171,7 @@ class LauncherTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 1)
         self.assertIn("1 early-stop", stdout.getvalue())
+        self.assertEqual(llm.call_count, 4)
 
     def test_normal_launcher_processes_every_record_in_numbered_run_directories(self):
         for debug, folder in ((None, "test-model"), ("FaLsE", "test-model-1"), ("false", "test-model-2")):

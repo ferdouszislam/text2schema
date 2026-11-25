@@ -19,6 +19,7 @@ from verifier.verify import parse_functional_dependencies, verify_schema
 
 
 DEFAULT_MAX_ITERATIONS = 3
+_EARLY_STOP_ATTEMPTS = 3
 _LOGGER = logging.getLogger(__name__)
 _PROMPT_DIRECTORY = Path(__file__).with_name("prompts")
 _OUTER_FENCE = re.compile(r"```[^\r\n`]*\r?\n(.*?)\r?\n```", re.DOTALL)
@@ -113,12 +114,17 @@ def _measure(timings, field):
 
 
 def _prepare_candidate(schema, attribute_types, timings):
-    """Return DDL, schema validation feedback, and DDL generation feedback."""
+    """Return DDL, schema validation feedback, DDL feedback, and the schema structure."""
     with _measure(timings, "schema_validation_seconds"):
         try:
-            _, attributes = parse_relational_schema(schema)
+            relations, attributes = parse_relational_schema(schema)
         except ValueError as error:
-            return [], f"Invalid relational schema. {error}", ""
+            return [], f"Invalid relational schema. {error}", "", None
+
+        schema_structure = {
+            relation.name: (frozenset(relation.columns), relation.primary_key)
+            for relation in relations
+        }
 
         missing = sorted(attribute_types.keys() - attributes)
         unexpected = sorted(attributes - attribute_types.keys())
@@ -126,15 +132,15 @@ def _prepare_candidate(schema, attribute_types, timings):
         if missing or unexpected:
             schema_feedback = f"Attribute coverage failed. Missing attributes: {missing}. Unexpected attributes: {unexpected}."
         if unexpected:
-            return [], schema_feedback, ""
+            return [], schema_feedback, "", schema_structure
 
     candidate_types = {name: sql_type for name, sql_type in attribute_types.items() if name in attributes}
     try:
         with _measure(timings, "ddl_generation_seconds"):
             queries = generate_create_queries(schema, candidate_types)
     except ValueError as error:
-        return [], schema_feedback, f"Cannot generate SQLite DDL for this schema. {error}"
-    return queries, schema_feedback, ""
+        return [], schema_feedback, f"Cannot generate SQLite DDL for this schema. {error}", schema_structure
+    return queries, schema_feedback, "", schema_structure
 
 
 def _emit(callback, stage, iteration, status, messages, response, *, started_at, pipeline_started_at=None, **fields):
@@ -180,8 +186,9 @@ def run_pipeline(
     also receive the numbered schema attempts and their feedback in order.
 
     ``max_iterations`` is the positive number of schema proposals permitted,
-    including the initial one. Two consecutive rejected proposals with
-    identical raw responses and feedback end the loop with status ``early-stop``.
+    including the initial one. Three consecutive rejected proposals with the
+    same relations, attributes, and declared primary keys end the loop with
+    status ``early-stop``. The order of relations and attributes is ignored.
     The returned JSON-serializable dictionary has the extraction, each
     attempted schema with feedback and ``create_queries``, and the final schema
     with its queries and status. The pipeline generates
@@ -226,7 +233,8 @@ def run_pipeline(
     inputs.update(attributes=attributes, functional_dependencies=dependencies)
 
     attempts = []
-    previous_response_text = None
+    previous_schema_structure = None
+    matching_attempts = 0
     for iteration in range(1, max_iterations + 1):
         if attempts:
             inputs["attempt_history"] = [
@@ -248,7 +256,7 @@ def run_pipeline(
             with _measure(timings, "llm_seconds"):
                 response = _request(llm, messages)
             schema = _unwrap(response.text)
-            queries, feedback, ddl_feedback = _prepare_candidate(schema, types, timings)
+            queries, feedback, ddl_feedback, schema_structure = _prepare_candidate(schema, types, timings)
             verification = None
             if not feedback:
                 with _measure(timings, "verification_seconds"):
@@ -263,9 +271,18 @@ def run_pipeline(
             feedback = verification["feedback"]
         if ddl_feedback:
             feedback = f"{feedback}\n{ddl_feedback}".strip()
+
+        if schema_structure is None:
+            matching_attempts = 0
+        elif schema_structure == previous_schema_structure:
+            matching_attempts += 1
+        else:
+            matching_attempts = 1
+        previous_schema_structure = schema_structure
+
         if verified:
             status = "verified"
-        elif attempts and response.text == previous_response_text and feedback == attempts[-1]["feedback"]:
+        elif matching_attempts == _EARLY_STOP_ATTEMPTS:
             status = "early-stop"
         else:
             status = "exhausted" if iteration == max_iterations else "rejected"
@@ -284,7 +301,6 @@ def run_pipeline(
               feedback=feedback, verification=verification, create_queries=queries, **timings)
         if status != "rejected":
             break
-        previous_response_text = response.text
 
     return {
         "status": status,

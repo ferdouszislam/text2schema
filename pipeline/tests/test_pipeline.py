@@ -171,59 +171,80 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(events[-1]["create_queries"], expected_queries)
         self.assertIn("2NF", result["feedback"])
 
-    def test_identical_response_and_feedback_stop_after_two_schema_attempts(self):
-        for limit in (2, 5):
+    def test_reordered_relations_and_attributes_stop_on_third_schema_attempt(self):
+        reordered = "Mapping(C, B, <u>A</u>)\nRecord(<u>Notes</u>, <u>A</u>)"
+        final_schema = "Record ( <u>Notes</u>, <u>A</u> )\n\nMapping( B, <u>A</u>, C )"
+        fenced = f"```text\n{final_schema}\n```"
+        for limit in (3, 5):
             with self.subTest(limit=limit):
                 llm = ScriptedLLM(
                     EXTRACTION,
-                    LLMResponse(FAILING_SCHEMA, input_tokens=20),
-                    LLMResponse(FAILING_SCHEMA, input_tokens=40),
+                    PARTIALLY_REVISED_SCHEMA,
+                    reordered,
+                    fenced,
                 )
                 events = []
                 result = run_pipeline(SPECIFICATION, llm, max_iterations=limit, on_event=events.append)
 
                 self.assertFalse(result["verified"])
                 self.assertEqual(result["status"], "early-stop")
-                self.assertEqual(len(llm.calls), 3)
-                first_attempt, second_attempt = result["attempts"]
-                self.assertEqual(first_attempt["iteration"], 1)
-                self.assertEqual(second_attempt["iteration"], 2)
-                self.assertEqual(result["feedback"], verify_schema(FAILING_SCHEMA, DEPENDENCIES)["feedback"])
-                self.assertEqual(first_attempt["feedback"], result["feedback"])
-                self.assertEqual(second_attempt["feedback"], result["feedback"])
-                self.assertEqual(result["relational_schema"], FAILING_SCHEMA)
-                self.assertEqual(result["create_queries"], second_attempt["create_queries"])
+                self.assertEqual(len(llm.calls), 4)
+                first_attempt, second_attempt, third_attempt = result["attempts"]
+                self.assertEqual(third_attempt["iteration"], 3)
+                self.assertEqual(result["feedback"], third_attempt["feedback"])
+                self.assertEqual(result["relational_schema"], final_schema)
+                self.assertEqual(result["create_queries"], generate_create_queries(final_schema, ATTRIBUTE_TYPES))
                 self.assert_attempt_history(llm.calls[2], first_attempt)
+                self.assert_attempt_history(llm.calls[3], first_attempt, second_attempt)
                 self.assertEqual([event["status"] for event in events],
-                                 ["extracted", "rejected", "early-stop"])
+                                 ["extracted", "rejected", "rejected", "early-stop"])
+                self.assertEqual([event["model_response"] for event in events[1:]],
+                                 [PARTIALLY_REVISED_SCHEMA, reordered, fenced])
 
-    def test_same_feedback_requires_adjacent_identical_raw_responses(self):
-        fenced_schema = f"```text\n{FAILING_SCHEMA}\n```"
-        llm = ScriptedLLM(EXTRACTION, FAILING_SCHEMA, fenced_schema, FAILING_SCHEMA, FAILING_SCHEMA)
-        events = []
-        result = run_pipeline(SPECIFICATION, llm, max_iterations=5, on_event=events.append)
+    def test_changed_or_unparsable_schema_breaks_the_streak(self):
+        schema = PARTIALLY_REVISED_SCHEMA
+        changed_schemas = {
+            "relation name": schema.replace("Mapping(", "Link("),
+            "attribute membership": "Record(<u>A</u>, <u>Notes</u>, C)\nMapping(<u>A</u>, B)",
+            "primary key membership": "Record(<u>A</u>, <u>Notes</u>)\nMapping(A, <u>B</u>, C)",
+            "unparsable schema": "This is not a schema",
+        }
+        for change, changed_schema in changed_schemas.items():
+            with self.subTest(change=change):
+                llm = ScriptedLLM(EXTRACTION, schema, schema, changed_schema, schema, schema, schema)
+                events = []
+                result = run_pipeline(SPECIFICATION, llm, max_iterations=7, on_event=events.append)
 
-        self.assertEqual(result["status"], "early-stop")
-        self.assertEqual(len(llm.calls), 5)
-        self.assertEqual([event["status"] for event in events[1:]],
-                         ["rejected", "rejected", "rejected", "early-stop"])
-        self.assertEqual([attempt["relational_schema"] for attempt in result["attempts"]], [FAILING_SCHEMA] * 4)
-        self.assertEqual([attempt["feedback"] for attempt in result["attempts"]], [result["feedback"]] * 4)
+                self.assertEqual(result["status"], "early-stop")
+                self.assertEqual([event["status"] for event in events[1:]],
+                                 ["rejected"] * 5 + ["early-stop"])
 
-    def test_changed_feedback_continues_and_verified_takes_priority(self):
-        llm = ScriptedLLM(EXTRACTION, FAILING_SCHEMA, FAILING_SCHEMA, FAILING_SCHEMA)
-        events = []
-        with patch("pipeline.run.verify_schema", side_effect=[
-            {"verified": False, "feedback": "First feedback"},
-            {"verified": False, "feedback": "Different feedback"},
-            {"verified": True, "feedback": "Different feedback"},
-        ]):
-            result = run_pipeline(SPECIFICATION, llm, on_event=events.append)
+    def test_repeated_unparsable_schema_reaches_the_iteration_limit(self):
+        llm = ScriptedLLM(EXTRACTION, *["This is not a schema"] * 4)
+        result = run_pipeline(SPECIFICATION, llm, max_iterations=4)
 
-        self.assertTrue(result["verified"])
-        self.assertEqual(result["status"], "verified")
-        self.assertEqual(len(llm.calls), 4)
-        self.assertEqual([event["status"] for event in events[1:]], ["rejected", "rejected", "verified"])
+        self.assertEqual(result["status"], "exhausted")
+        self.assertEqual(len(result["attempts"]), 4)
+
+    def test_early_stop_ignores_feedback_text_and_preserves_verified_priority(self):
+        for verified, expected_status in ((False, "early-stop"), (True, "verified")):
+            with self.subTest(verified=verified):
+                llm = ScriptedLLM(EXTRACTION, FAILING_SCHEMA, FAILING_SCHEMA, FAILING_SCHEMA)
+                events = []
+                with patch("pipeline.run.verify_schema", side_effect=[
+                    {"verified": False, "feedback": "First feedback"},
+                    {"verified": False, "feedback": "Second feedback"},
+                    {"verified": verified, "feedback": "Third feedback"},
+                ]):
+                    result = run_pipeline(SPECIFICATION, llm, on_event=events.append)
+
+                self.assertEqual(result["verified"], verified)
+                self.assertEqual(result["status"], expected_status)
+                self.assertEqual(len(llm.calls), 4)
+                self.assertEqual([event["status"] for event in events[1:]],
+                                 ["rejected", "rejected", expected_status])
+                self.assertEqual([event["feedback"] for event in events[1:]],
+                                 ["First feedback", "Second feedback", "Third feedback"])
 
     def test_solver_error_event_keeps_generated_ddl(self):
         llm = ScriptedLLM(EXTRACTION, VERIFIED_SCHEMA)

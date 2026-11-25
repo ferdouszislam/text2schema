@@ -81,7 +81,7 @@ For a model named `debug` in any capitalization, full runs start at suffix `-1` 
 
 Range runs end their folder name with the inclusive bounds, such as `pipeline/results/qwen3-8b-1_94/`. If the folder already exists, the launcher puts the run counter before the bounds, as in `pipeline/results/qwen3-8b-1-1_94/`.
 
-- `results.csv` records extraction at iteration `0`, schema proposals from iteration `1` onward, and any record-level errors. Schema rows include reported token counts, feedback, and any generated SQL in `create_queries`. Two consecutive rejected proposals with identical raw model responses and feedback end the record with `early-stop` on the second proposal.
+- `results.csv` records extraction at iteration `0`, schema proposals from iteration `1` onward, and any record-level errors. Schema rows include reported token counts, feedback, and any generated SQL in `create_queries`. Three consecutive rejected proposals trigger `early-stop` when their relation names, attributes per relation, and declared primary keys match, regardless of relation or attribute order.
 - `extraction_results.csv` records extraction attempts, including the attribute names, SQLite types, FDs, and reported extraction token counts.
 
 Both reports record elapsed time and LLM request time in seconds. The main report also records time spent validating each schema, generating its `CREATE TABLE` statements, and running the verifier. The last row for each processed specification holds its total pipeline time, including all attempts.

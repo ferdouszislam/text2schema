@@ -1,5 +1,5 @@
 #!/bin/bash
-# Shared worker sourced by run_fir_qwen_27b_35b.slurm and run_fir_qwen_9b.slurm.
+# Shared worker sourced by the per-model Fir Slurm launchers.
 
 model=$1
 chunk_index=$2

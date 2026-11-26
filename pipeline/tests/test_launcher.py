@@ -411,7 +411,7 @@ class LauncherTests(unittest.TestCase):
         for model, setting, expected, folder in (
             ("qwen3.5:9b-q4_K_M", None, False, "qwen3.5-9b-q4_K_M"),
             ("qwen3.5:35b-a3b-q8_0", "false", False, "qwen3.5-35b-a3b-q8_0"),
-            ("qwen3.8:27b-q8_0", " TrUe ", True, "qwen3.8-27b-q8_0-thinking-enabled"),
+            ("qwen3.8:27b-q8_0", " TrUe ", True, "qwen3.8-27b-q8_0-te"),
             ("llama3.2:3b", "true", None, "llama3.2-3b"),
         ):
             with self.subTest(model=model, setting=setting):

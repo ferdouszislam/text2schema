@@ -154,7 +154,7 @@ def main(
             request_delay_seconds=request_delay, hosted_503_retries=hosted_503_retries,
             batch_timeout_seconds=batch_timeout, ollama_think=ollama_think,
         )
-        result_model = f"{model}-thinking-enabled" if ollama_think else model
+        result_model = f"{model}-te" if ollama_think else model
         run_directory = _create_run_directory(result_model, debug=debug, record_range=record_range)
         output_csv = run_directory / "results.csv"
         extraction_csv = default_extraction_csv(output_csv)

@@ -82,7 +82,7 @@ Edit the selected prompt files to change the model instructions. The pipeline fi
 
 Full runs save both CSVs under `pipeline/results/<model-name>/`, replacing characters such as `/` and `:` in the selected model name with hyphens. For example, `qwen3:8b` first uses `pipeline/results/qwen3-8b/`. If that folder exists, the launcher tries `pipeline/results/qwen3-8b-1/`, `pipeline/results/qwen3-8b-2/`, and so on until it finds an unused name. Debug runs use their own numbered folders under `pipeline/results/debug/`.
 
-A Qwen run with `PIPELINE_QWEN_THINKING=true` adds `-thinking-enabled` to its model folder name before any run counter or range suffix. This applies to full, ranged, and debug runs. For example, a full run for `qwen3.5:9b-q4_K_M` saves to `pipeline/results/qwen3.5-9b-q4_K_M-thinking-enabled/`.
+A Qwen run with `PIPELINE_QWEN_THINKING=true` adds `-te` to its model folder name before any run counter or range suffix. This applies to full, ranged, and debug runs. For example, a full run for `qwen3.5:9b-q4_K_M` saves to `pipeline/results/qwen3.5-9b-q4_K_M-te/`.
 
 For a model named `debug` in any capitalization, full runs start at suffix `-1` because `pipeline/results/debug/` holds debug runs.
 

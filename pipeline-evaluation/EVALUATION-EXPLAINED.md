@@ -73,6 +73,12 @@ judging instructions, and identifier kind. It pairs the original generated
 name with the original target name in that order. Each valid batch is saved
 as it completes, so a retry can reuse results even if a later batch fails.
 
+The judge prompt includes table and column examples with both `1` and `0`
+decisions. Every response must contain one decision per input pair ID.
+Supported models receive a strict JSON schema. If a response fails validation,
+the evaluator splits the batch and retries the smaller batches. A failed
+single-pair response stops the run with its validation error.
+
 For each specification, divide the table match count by the total target
 table count and the column match count by the total target column count across
 all target tables. Multiply by 100 and average the percentages across

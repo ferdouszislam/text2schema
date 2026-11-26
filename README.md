@@ -15,6 +15,9 @@ Run `python run_pipeline.py` to process the database specifications in the JSONL
 set in `.env`. The [text-to-schema pipeline guide](pipeline/README.md) covers model
 settings, prompt files, and the CSV results.
 
+The [pipeline evaluation guide](pipeline-evaluation/README.md) shows how to turn
+saved runs into verification charts and schema matching, token, and timing tables.
+
 The [Z3 verifier guide](verifier/README.md) shows how to verify a proposed relational
 schema and use the feedback to refine it.
 

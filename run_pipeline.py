@@ -39,6 +39,16 @@ def _debug_enabled(settings: dict[str, str | None]) -> bool:
     return debug_setting == "true"
 
 
+def _qwen_thinking(settings: dict[str, str | None], backend: str, model: str) -> bool | None:
+    family = model.rsplit("/", 1)[-1].partition(":")[0].lower()
+    if backend != "ollama" or (family != "qwen3" and not family.startswith("qwen3.")):
+        return None
+    setting = (settings.get("PIPELINE_QWEN_THINKING", "false") or "").strip().lower()
+    if setting not in ("true", "false"):
+        raise ValueError("Set PIPELINE_QWEN_THINKING to true or false in .env.")
+    return setting == "true"
+
+
 def configured_input_record_count(config_path: str | Path | None = None) -> int:
     """Count the nonblank records in the configured input for a ranged run."""
     settings = _read_settings(config_path)
@@ -102,6 +112,7 @@ def main(
         id_field = _required(settings, "PIPELINE_ID_FIELD")
         backend = _required(settings, "PIPELINE_BACKEND")
         model = _required(settings, "PIPELINE_MODEL")
+        ollama_think = _qwen_thinking(settings, backend, model)
         api_base = settings.get("PIPELINE_API_BASE") or None
         timeout_text = _required(settings, "PIPELINE_TIMEOUT_SECONDS")
         iterations_text = _required(settings, "PIPELINE_MAX_ITERATIONS")
@@ -141,9 +152,10 @@ def main(
         llm = LLMClient(
             model, backend=backend, api_key=api_key, api_base=api_base, timeout=timeout,
             request_delay_seconds=request_delay, hosted_503_retries=hosted_503_retries,
-            batch_timeout_seconds=batch_timeout,
+            batch_timeout_seconds=batch_timeout, ollama_think=ollama_think,
         )
-        run_directory = _create_run_directory(model, debug=debug, record_range=record_range)
+        result_model = f"{model}-thinking-enabled" if ollama_think else model
+        run_directory = _create_run_directory(result_model, debug=debug, record_range=record_range)
         output_csv = run_directory / "results.csv"
         extraction_csv = default_extraction_csv(output_csv)
         _LOGGER.info(
@@ -152,6 +164,8 @@ def main(
             "debug" if debug else "full", model, backend, timeout, request_delay,
             hosted_503_retries if backend == "hosted" else 0, max_iterations, input_jsonl,
         )
+        if ollama_think is not None:
+            _LOGGER.info("Qwen thinking mode is %s", "on" if ollama_think else "off")
         started_at = monotonic()
         results = run_batch(
             input_jsonl,

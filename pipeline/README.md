@@ -57,6 +57,7 @@ The input is UTF-8 JSONL with one JSON object per line. The default fields match
 | `PIPELINE_SPEC_FIELD`, `PIPELINE_ID_FIELD` | | Keys for the specification and record ID. The defaults are `question` and `id`. |
 | `PIPELINE_BACKEND` | `--backend` | Select `ollama` or `hosted`. |
 | `PIPELINE_MODEL` | `--model` | Set an installed Ollama model tag or a LiteLLM `provider/model` name. |
+| `PIPELINE_QWEN_THINKING` | | Set `false` to disable thinking for Qwen3 and Qwen3.x models on Ollama, or `true` to enable it. Defaults to `false`. |
 | `PIPELINE_API_KEY` | `--api-key` | Supply an API key when needed. |
 | `PIPELINE_API_BASE` | `--api-base` | Override the model endpoint. |
 | `PIPELINE_TIMEOUT_SECONDS` | `--timeout-seconds` | Set the timeout for each HTTP request in seconds. |
@@ -69,6 +70,8 @@ Relative paths are resolved from the project root.
 
 The request delay accepts finite, nonnegative seconds, including fractions.
 
+The Qwen thinking setting applies to extraction, initial schema generation, and every schema revision.
+
 Hosted HTTP 503 retries use exponential backoff with jitter. The launcher reports each retry and its wait time in the live progress log. [Hosted HTTP 503 retries](PIPELINE-EXPLAINED.md#hosted-http-503-retries)
 
 For Ollama, start the server and pull the configured model. The default endpoint is `http://127.0.0.1:11434`. Other hosted providers, including Anthropic, use standard LiteLLM requests. For a custom OpenAI-compatible endpoint, use `openai/<model>` and set `PIPELINE_API_BASE` to the endpoint base URL. [Ollama API](https://docs.ollama.com/api/chat) · [LiteLLM providers and credentials](https://docs.litellm.ai/docs/providers) · [OpenAI-compatible endpoints](https://docs.litellm.ai/docs/providers/openai_compatible)
@@ -78,6 +81,8 @@ Edit the selected prompt files to change the model instructions. The pipeline fi
 ## Read the results
 
 Full runs save both CSVs under `pipeline/results/<model-name>/`, replacing characters such as `/` and `:` in the selected model name with hyphens. For example, `qwen3:8b` first uses `pipeline/results/qwen3-8b/`. If that folder exists, the launcher tries `pipeline/results/qwen3-8b-1/`, `pipeline/results/qwen3-8b-2/`, and so on until it finds an unused name. Debug runs use their own numbered folders under `pipeline/results/debug/`.
+
+A Qwen run with `PIPELINE_QWEN_THINKING=true` adds `-thinking-enabled` to its model folder name before any run counter or range suffix. This applies to full, ranged, and debug runs. For example, a full run for `qwen3.5:9b-q4_K_M` saves to `pipeline/results/qwen3.5-9b-q4_K_M-thinking-enabled/`.
 
 For a model named `debug` in any capitalization, full runs start at suffix `-1` because `pipeline/results/debug/` holds debug runs.
 

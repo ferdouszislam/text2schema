@@ -1,6 +1,6 @@
 from contextlib import redirect_stderr, redirect_stdout
 import csv
-from io import StringIO
+from io import BytesIO, StringIO
 import json
 from pathlib import Path
 import runpy
@@ -47,13 +47,14 @@ class LauncherTests(unittest.TestCase):
         lines = [record if isinstance(record, str) else json.dumps(record) for record in records]
         self.input.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-    def configure(self, *, max_iterations=2, debug=None, request_delay=None, hosted_503_retries=None):
+    def configure(self, *, max_iterations=2, debug=None, request_delay=None, hosted_503_retries=None,
+                  model="test-model", qwen_thinking=None):
         settings = {
             "PIPELINE_INPUT_JSONL": self.input.name,
             "PIPELINE_SPEC_FIELD": "requirements",
             "PIPELINE_ID_FIELD": "case",
             "PIPELINE_BACKEND": "ollama",
-            "PIPELINE_MODEL": "test-model",
+            "PIPELINE_MODEL": model,
             "PIPELINE_API_KEY": "file-key",
             "PIPELINE_API_BASE": "http://file.example",
             "PIPELINE_TIMEOUT_SECONDS": 12,
@@ -67,6 +68,8 @@ class LauncherTests(unittest.TestCase):
             settings["PIPELINE_REQUEST_DELAY_SECONDS"] = request_delay
         if hosted_503_retries is not None:
             settings["PIPELINE_HOSTED_503_RETRIES"] = hosted_503_retries
+        if qwen_thinking is not None:
+            settings["PIPELINE_QWEN_THINKING"] = qwen_thinking
         self.config.write_text("".join(f"{key}={value}\n" for key, value in settings.items()),
                                encoding="utf-8")
 
@@ -348,7 +351,7 @@ class LauncherTests(unittest.TestCase):
                 client.assert_called_once_with(
                     model, backend=backend, api_key=api_key, api_base=api_base, timeout=timeout,
                     request_delay_seconds=3.0, hosted_503_retries=hosted_503_retries,
-                    batch_timeout_seconds=batch_timeout,
+                    batch_timeout_seconds=batch_timeout, ollama_think=None,
                 )
                 report_dir = self.report_root / folder
                 self.assertEqual(batch.call_args.args[1], report_dir / self.results.name)
@@ -356,7 +359,7 @@ class LauncherTests(unittest.TestCase):
                 self.assertEqual(batch.call_args.kwargs["max_iterations"], max_iterations)
 
     def test_hosted_503_retries_keep_extraction_and_schema_iterations(self):
-        self.configure(max_iterations=1, request_delay=0)
+        self.configure(max_iterations=1, request_delay=0, qwen_thinking="true")
         self.write_records({"case": "first", "requirements": "A determines B and B determines C."})
         failure = RuntimeError("temporarily unavailable")
         failure.status_code = 503
@@ -381,6 +384,7 @@ class LauncherTests(unittest.TestCase):
         self.assertEqual(len(sent_messages), 4)
         self.assertEqual(sent_messages[0], sent_messages[1])
         self.assertEqual(sent_messages[2], sent_messages[3])
+        self.assertTrue(all("think" not in request.kwargs for request in completion.call_args_list))
         rows = self.read_csv(self.report_root / "gemini-test-model" / "results.csv")
         self.assertEqual([(row["stage"], row["iteration"], row["status"]) for row in rows],
                          [("extraction", "0", "extracted"), ("schema", "1", "verified")])
@@ -401,6 +405,46 @@ class LauncherTests(unittest.TestCase):
             call.request(ANY), call.sleep(1.5), call.request(ANY),
             call.sleep(1.5), call.request(ANY), call.sleep(1.5), call.request(ANY),
         ])
+
+    def test_dotenv_qwen_thinking_applies_to_extraction_and_schema_requests(self):
+        self.write_records({"case": "only", "requirements": "A determines B and B determines C."})
+        for model, setting, expected, folder in (
+            ("qwen3.5:9b-q4_K_M", None, False, "qwen3.5-9b-q4_K_M"),
+            ("qwen3.5:35b-a3b-q8_0", "false", False, "qwen3.5-35b-a3b-q8_0"),
+            ("qwen3.8:27b-q8_0", " TrUe ", True, "qwen3.8-27b-q8_0-thinking-enabled"),
+            ("llama3.2:3b", "true", None, "llama3.2-3b"),
+        ):
+            with self.subTest(model=model, setting=setting):
+                self.configure(model=model, qwen_thinking=setting, request_delay=0)
+                responses = [
+                    BytesIO(json.dumps({"message": {"content": reply}}).encode())
+                    for reply in (EXTRACTION, FAILING_SCHEMA, VERIFIED_SCHEMA)
+                ]
+                with (patch.object(launcher, "_ROOT", self.directory),
+                      patch("pipeline.llm.urlopen", side_effect=responses) as send,
+                      redirect_stdout(StringIO())):
+                    self.assertEqual(launcher.main(), 0)
+
+                self.assertTrue((self.report_root / folder / "results.csv").is_file())
+                self.assertEqual(send.call_count, 3)
+                for request in send.call_args_list:
+                    payload = json.loads(request.args[0].data)
+                    self.assertEqual(payload["model"], model)
+                    if expected is None:
+                        self.assertNotIn("think", payload)
+                    else:
+                        self.assertIs(payload["think"], expected)
+
+    def test_invalid_qwen_thinking_flag_fails_before_model_setup(self):
+        self.configure(model="qwen3.8:27b-q8_0", qwen_thinking="yes")
+        error = StringIO()
+        with (patch.object(launcher, "_ROOT", self.directory),
+              patch.object(launcher, "LLMClient") as model, redirect_stderr(error)):
+            self.assertEqual(launcher.main(), 2)
+
+        model.assert_not_called()
+        self.assertIn("PIPELINE_QWEN_THINKING", error.getvalue())
+        self.assertFalse(self.report_root.exists())
 
     def test_invalid_request_delay_fails_before_model_setup(self):
         for value in ("", "-1", "nan", "inf", "invalid"):

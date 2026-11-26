@@ -51,6 +51,8 @@ Set `debug=false` in `.env` before submitting the arrays. The example configurat
 
 The scripts supply the Ollama backend, model tag, and loopback endpoint. Each task reads the rest of the configuration from `.env` when it starts. Keep the checkout, input dataset, `.env`, and prompts fixed while tasks are queued or running so every task uses the same inputs and range boundaries.
 
+All three Fir Qwen models run with thinking disabled by default (`PIPELINE_QWEN_THINKING=false`). Set `PIPELINE_QWEN_THINKING=true` in the project's `.env` on Fir to enable thinking for extraction and every schema proposal. For example, a thinking-enabled 27B task covering records 1–94 writes to `pipeline/results/qwen3.8-27b-q8_0-thinking-enabled-1_94/`.
+
 ## 4. Find or install Ollama on Fir
 
 Check for an executable with `command -v ollama`. If that returns a path, check its version with `ollama --version`. You can also use `module spider ollama` to check for a cluster module. Load the module before submission if you use it.

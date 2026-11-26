@@ -42,8 +42,10 @@ class LLMClient:
     pass the provider key, or leave the key to the provider's environment.
     For ``backend="ollama"``, use the model name as installed in Ollama.
     Ollama defaults to ``http://127.0.0.1:11434`` and accepts an optional
-    bearer key for authenticated servers. Supply a base URL to override the
-    corresponding provider endpoint, and a positive timeout in seconds. Set
+    bearer key for authenticated servers. Set ``ollama_think`` to enable or
+    disable thinking for a supported model. Omit it to use the model's default.
+    Supply a base URL to override the corresponding provider endpoint, and a
+    positive timeout in seconds. Set
     ``request_delay_seconds`` to wait between calls made by this client.
     ``hosted_503_retries`` sets how many times to resend a hosted request
     after HTTP 503. Set it to zero for a single attempt.
@@ -66,11 +68,14 @@ class LLMClient:
         request_delay_seconds: float = 0,
         hosted_503_retries: int = DEFAULT_HOSTED_503_RETRIES,
         batch_timeout_seconds: float = DEFAULT_BATCH_TIMEOUT_SECONDS,
+        ollama_think: bool | None = None,
     ):
         if not isinstance(model, str) or not model.strip():
             raise ValueError("Provide an LLM model name.")
         if backend not in ("hosted", "ollama"):
             raise ValueError("The LLM backend must be hosted or ollama.")
+        if ollama_think is not None and type(ollama_think) is not bool:
+            raise ValueError("Ollama thinking must be a Boolean or None.")
         model = model.strip()
         if backend == "hosted":
             provider, _, model_name = model.partition("/")
@@ -101,6 +106,7 @@ class LLMClient:
         self._request_delay_seconds = request_delay_seconds
         self._hosted_503_retries = hosted_503_retries
         self._batch_timeout_seconds = batch_timeout_seconds
+        self._ollama_think = ollama_think
         self._last_request_finished: float | None = None
 
     def batch_completion(self):
@@ -241,6 +247,8 @@ class LLMClient:
     def _ollama(self, messages: list[dict[str, str]]) -> LLMResponse:
         base = self.api_base or "http://127.0.0.1:11434"
         payload = {"model": self.model, "messages": messages, "stream": False}
+        if self._ollama_think is not None:
+            payload["think"] = self._ollama_think
         request = Request(
             f"{base}/api/chat",
             data=json.dumps(payload).encode("utf-8"),

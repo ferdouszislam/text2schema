@@ -1,0 +1,194 @@
+{
+  "started_at": "2026-11-26T22:03:04.889824+00:00",
+  "target_dataset": "dataset/RSchema/preprocessing/results/cleaned.jsonl",
+  "similarity_enabled": false,
+  "similarity_model": null,
+  "required_iteration_bins": [
+    "0",
+    "1-5",
+    "6-10",
+    "exhausted",
+    "early-stop",
+    "errors"
+  ],
+  "verification_criteria": {
+    "2NF": "2NF",
+    "3NF": "3NF",
+    "lossless_decomposition": "Lossless join",
+    "dependency_preservation": "Dependency preservation",
+    "others": "Others"
+  },
+  "models": [
+    {
+      "model": "openai-gpt-4o-mini",
+      "record_count": 375,
+      "required_iteration_counts": {
+        "0": 88,
+        "1-5": 25,
+        "6-10": 1,
+        "exhausted": 19,
+        "early-stop": 231,
+        "errors": 11
+      },
+      "unverified_criteria": {
+        "record_count": 250,
+        "failed_counts": {
+          "2NF": 79,
+          "3NF": 87,
+          "lossless_decomposition": 220,
+          "dependency_preservation": 14,
+          "others": 4
+        },
+        "unavailable_counts": {
+          "2NF": 4,
+          "3NF": 4,
+          "lossless_decomposition": 4,
+          "dependency_preservation": 4
+        }
+      },
+      "mean_table_match_pct": {
+        "exact": 55.11970177970178,
+        "similarity": null
+      },
+      "mean_column_match_pct": {
+        "exact": 35.56160073030642,
+        "similarity": null
+      },
+      "mean_tokens": {
+        "input": 15368.581333333334,
+        "output": 626.144,
+        "total": 15994.725333333334
+      },
+      "reported_token_events": {
+        "input": 1832,
+        "output": 1832,
+        "total": 1832
+      },
+      "llm_event_count": 1832,
+      "mean_seconds": {
+        "total": 897.084856392208,
+        "python": 0.07352890756798054,
+        "llm": 897.01132748464
+      },
+      "timed_record_counts": {
+        "total": 375,
+        "python": 375,
+        "llm": 375
+      }
+    },
+    {
+      "model": "qwen3.8-27b-q8_0",
+      "record_count": 375,
+      "required_iteration_counts": {
+        "0": 85,
+        "1-5": 28,
+        "6-10": 6,
+        "exhausted": 72,
+        "early-stop": 175,
+        "errors": 9
+      },
+      "unverified_criteria": {
+        "record_count": 247,
+        "failed_counts": {
+          "2NF": 33,
+          "3NF": 37,
+          "lossless_decomposition": 232,
+          "dependency_preservation": 1,
+          "others": 2
+        },
+        "unavailable_counts": {
+          "2NF": 2,
+          "3NF": 2,
+          "lossless_decomposition": 2,
+          "dependency_preservation": 2
+        }
+      },
+      "mean_table_match_pct": {
+        "exact": 53.744415584415584,
+        "similarity": null
+      },
+      "mean_column_match_pct": {
+        "exact": 33.466353500876615,
+        "similarity": null
+      },
+      "mean_tokens": {
+        "input": 25861.88266666667,
+        "output": 842.9226666666667,
+        "total": 26704.805333333334
+      },
+      "reported_token_events": {
+        "input": 2084,
+        "output": 2084,
+        "total": 2084
+      },
+      "llm_event_count": 2088,
+      "mean_seconds": {
+        "total": 75.65998550323289,
+        "python": 2.0846807750981147,
+        "llm": 73.57530472813477
+      },
+      "timed_record_counts": {
+        "total": 375,
+        "python": 375,
+        "llm": 375
+      }
+    },
+    {
+      "model": "qwen3.8-27b-q8_0-te",
+      "record_count": 375,
+      "required_iteration_counts": {
+        "0": 101,
+        "1-5": 194,
+        "6-10": 2,
+        "exhausted": 2,
+        "early-stop": 0,
+        "errors": 76
+      },
+      "unverified_criteria": {
+        "record_count": 2,
+        "failed_counts": {
+          "2NF": 0,
+          "3NF": 0,
+          "lossless_decomposition": 0,
+          "dependency_preservation": 0,
+          "others": 2
+        },
+        "unavailable_counts": {
+          "2NF": 2,
+          "3NF": 2,
+          "lossless_decomposition": 2,
+          "dependency_preservation": 2
+        }
+      },
+      "mean_table_match_pct": {
+        "exact": 44.50420394420395,
+        "similarity": null
+      },
+      "mean_column_match_pct": {
+        "exact": 29.932345884713378,
+        "similarity": null
+      },
+      "mean_tokens": {
+        "input": 7218.690666666666,
+        "output": 11404.872,
+        "total": 18623.562666666665
+      },
+      "reported_token_events": {
+        "input": 1061,
+        "output": 1061,
+        "total": 1061
+      },
+      "llm_event_count": 1138,
+      "mean_seconds": {
+        "total": 616.3093136775863,
+        "python": 1.0323836496714502,
+        "llm": 615.2769300279149
+      },
+      "timed_record_counts": {
+        "total": 375,
+        "python": 375,
+        "llm": 375
+      }
+    }
+  ]
+}

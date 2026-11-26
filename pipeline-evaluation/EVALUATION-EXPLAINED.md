@@ -4,7 +4,8 @@
 | --- | --- |
 | `evaluate.py` | Selects model folders, loads the dataset and pipeline reports, computes per-specification and per-model metrics, and saves JSON before rendering |
 | `schema_matches.py` | Extracts table and column names from SQL and pairs exact and similar names |
-| `similarity.py` | Sends batches of up to 64 same-kind identifier pairs to OpenAI, validates the binary replies, and caches decisions within the run |
+| `similarity.py` | Checks the cache first, sends batches of up to 64 uncached same-kind pairs to OpenAI, and validates the binary replies |
+| `similarity_cache.py` | Stores validated decisions across evaluation runs |
 | `render_reports.py` | Reads the saved aggregate JSON and writes four charts and two Markdown tables |
 
 ## Required iterations
@@ -66,6 +67,11 @@ A decision of `1` pairs those names and removes them from further
 comparisons in that specification. Column scoring runs the same exact and
 similarity steps within each exact or similar table pair. Column pairs are
 recorded as `[generated table, generated column, target table, target column]`.
+
+The cache keeps separate decisions for each judge model, version of the
+judging instructions, and identifier kind. It pairs the original generated
+name with the original target name in that order. Each valid batch is saved
+as it completes, so a retry can reuse results even if a later batch fails.
 
 For each specification, divide the table match count by the total target
 table count and the column match count by the total target column count across

@@ -24,9 +24,10 @@ EVALUATION_SIMILARITY_MODEL=gpt-6-luna
 EVALUATION_OPENAI_API_KEY=
 ```
 
-With similarity enabled, supply an OpenAI API key. The judge sends identifier
-pairs to OpenAI in batches and saves its binary decisions with the results.
-Shell environment values override `.env` values.
+With similarity enabled, supply an OpenAI API key. The judge first checks
+`pipeline-evaluation/.cache/similarity.sqlite3` and sends only uncached pairs to
+OpenAI in batches. It saves both similar and dissimilar decisions so later
+runs can reuse them. Shell environment values override `.env` values.
 
 ## Results
 
@@ -37,7 +38,7 @@ Each completed run writes a UTC timestamp directory under
 | --- | --- |
 | `evaluation_metrics.json` | Per-model iteration counts, verification-criterion failures, and means used by the charts and tables |
 | `per_record_metrics.json` | Final status, criterion outcomes for unverified proposals, schema names, match pairs, and resource measurements for each specification |
-| `similarity_decisions.json` | Unique identifier pairs judged by the model, available when similarity is enabled |
+| `similarity_decisions.json` | Unique comparisons used by the run, including decisions retrieved from the cache |
 | `required_iterations.png` | Grouped bar chart of LLM revision counts and unverified outcomes for all evaluated runs |
 | `verification_criteria_failures.png` | Grouped bar chart of formal criterion failures and pre-verifier rejections on final proposals from exhausted and early-stop records |
 | `table_matching.png` and `column_matching.png` | Grouped charts of exact and similarity match percentages for all evaluated models |

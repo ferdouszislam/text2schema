@@ -83,6 +83,30 @@ class HostedClientTests(unittest.TestCase):
             "num_retries": 0, "max_retries": 0,
         })
 
+    def test_forwards_structured_response_format_only_for_supported_models(self):
+        response_format = {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "decision",
+                "strict": True,
+                "schema": {"type": "object", "properties": {"match": {"type": "integer", "enum": [0, 1]}},
+                           "required": ["match"], "additionalProperties": False},
+            },
+        }
+        for model, supported in (("openai/gpt-6-luna", True), ("openai/gpt-3.5-turbo", False)):
+            with self.subTest(model=model):
+                completion = Mock(return_value={"choices": [{"message": {"content": '{"match":1}'}}]})
+                supports_schema = Mock(return_value=supported)
+                litellm = SimpleNamespace(completion=completion, supports_response_schema=supports_schema)
+                with patch.dict(sys.modules, {"litellm": litellm}):
+                    self.assertEqual(LLMClient(model, response_format=response_format)(MESSAGES), '{"match":1}')
+                supports_schema.assert_called_once_with(model=model)
+                completion.assert_called_once()
+                if supported:
+                    self.assertEqual(completion.call_args.kwargs["response_format"], response_format)
+                else:
+                    self.assertNotIn("response_format", completion.call_args.kwargs)
+
     def test_complete_retains_hosted_usage_and_exact_text(self):
         text = "\nStudent(Id)  "
         client = LLMClient("openai/example-model")

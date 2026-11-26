@@ -40,6 +40,8 @@ class LLMClient:
 
     For ``backend="hosted"``, use LiteLLM's ``provider/model`` name and
     pass the provider key, or leave the key to the provider's environment.
+    Standard hosted requests can supply a JSON Schema ``response_format`` for
+    models that support it.
     For ``backend="ollama"``, use the model name as installed in Ollama.
     Ollama defaults to ``http://127.0.0.1:11434`` and accepts an optional
     bearer key for authenticated servers. Set ``ollama_think`` to enable or
@@ -69,6 +71,7 @@ class LLMClient:
         hosted_503_retries: int = DEFAULT_HOSTED_503_RETRIES,
         batch_timeout_seconds: float = DEFAULT_BATCH_TIMEOUT_SECONDS,
         ollama_think: bool | None = None,
+        response_format: dict | None = None,
     ):
         if not isinstance(model, str) or not model.strip():
             raise ValueError("Provide an LLM model name.")
@@ -107,6 +110,7 @@ class LLMClient:
         self._hosted_503_retries = hosted_503_retries
         self._batch_timeout_seconds = batch_timeout_seconds
         self._ollama_think = ollama_think
+        self._response_format = response_format
         self._last_request_finished: float | None = None
 
     def batch_completion(self):
@@ -170,7 +174,7 @@ class LLMClient:
 
     def _hosted(self, messages: list[dict[str, str]]) -> LLMResponse:
         try:
-            from litellm import completion
+            import litellm
         except ImportError:
             raise LLMError("The hosted backend needs LiteLLM. Install the project requirements.") from None
 
@@ -206,12 +210,14 @@ class LLMClient:
             options["api_key"] = self._api_key
         if self.api_base is not None:
             options["api_base"] = self.api_base
+        if self._response_format is not None and litellm.supports_response_schema(model=self.model):
+            options["response_format"] = self._response_format
 
         backoff_limit = 4.0
         for attempt in range(self._hosted_503_retries + 1):
             wire_usage = None
             try:
-                response = completion(messages=[message.copy() for message in messages], **options)
+                response = litellm.completion(messages=[message.copy() for message in messages], **options)
             except Exception as error:
                 status = getattr(error, "status_code", None)
                 if status == 503:

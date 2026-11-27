@@ -94,3 +94,10 @@ Range runs end their folder name with the inclusive bounds, such as `pipeline/re
 Both reports record elapsed time and LLM request time in seconds. The main report also records time spent validating each schema, generating its `CREATE TABLE` statements, and running the verifier. The last row for each processed specification holds its total pipeline time, including all attempts.
 
 Use `spec_id` and `input_line` to match rows across the reports. Both files record `prompt` as a JSON array of chat messages and `model_response` as raw text. See the detailed guide for field definitions and the Python API. [Pipeline explained](PIPELINE-EXPLAINED.md)
+
+### Baseline folders
+
+Two folders hold baselines made from the saved `qwen3.8-27b-q8_0` run, with no new LLM call. They use the same CSV columns.
+
+- `qwen3.8-27b-q8_0-oneshot` keeps the extraction and the first schema proposal of each specification. A proposal that passes the verifier is `verified`; any other is `early-stop`.
+- `qwen3.8-27b-q8_0-bernstein` keeps the extraction, then builds the schema with Bernstein's 3NF synthesis from the extracted attributes, types, and FDs (minimal cover, one relation per left side, a key relation if no relation holds a key). The verifier checks it with the same FDs. Its LLM time is the extraction call only.

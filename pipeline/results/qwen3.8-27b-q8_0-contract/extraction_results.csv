@@ -1,0 +1,1 @@
+spec_id,input_line,status,database_specification,prompt,model_response,input_tokens,output_tokens,total_tokens,attributes,attribute_types,functional_dependencies,feedback,elapsed_seconds,llm_seconds

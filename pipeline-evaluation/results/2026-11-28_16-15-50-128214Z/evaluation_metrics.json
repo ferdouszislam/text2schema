@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-11-27T15:23:23.696593+00:00",
+  "started_at": "2026-11-28T16:15:50.128214+00:00",
   "target_dataset": "dataset/RSchema/preprocessing/results/cleaned.jsonl",
   "similarity_enabled": true,
   "similarity_model": "gpt-6-luna",
@@ -183,6 +183,120 @@
         "total": 22.87588318844574,
         "python": 0.02175830779550597,
         "llm": 22.854124880650236
+      },
+      "timed_record_counts": {
+        "total": 375,
+        "python": 375,
+        "llm": 375
+      }
+    },
+    {
+      "model": "qwen3.8-27b-q8_0-contract",
+      "record_count": 375,
+      "required_iteration_counts": {
+        "0": 153,
+        "1-5": 0,
+        "6-10": 0,
+        "exhausted": 0,
+        "early-stop": 222,
+        "errors": 0
+      },
+      "unverified_criteria": {
+        "record_count": 222,
+        "failed_counts": {
+          "2NF": 15,
+          "3NF": 55,
+          "lossless_decomposition": 194,
+          "dependency_preservation": 6,
+          "others": 0
+        },
+        "unavailable_counts": {
+          "2NF": 2,
+          "3NF": 2,
+          "lossless_decomposition": 2,
+          "dependency_preservation": 2
+        }
+      },
+      "mean_table_match_pct": {
+        "exact": 54.77232323232323,
+        "similarity": 77.48039442039442
+      },
+      "mean_column_match_pct": {
+        "exact": 43.49465043391064,
+        "similarity": 69.35353301422515
+      },
+      "mean_tokens": {
+        "input": 631.6853333333333,
+        "output": 988.512,
+        "total": 1620.1973333333333
+      },
+      "reported_token_events": {
+        "input": 375,
+        "output": 375,
+        "total": 375
+      },
+      "llm_event_count": 375,
+      "mean_seconds": {
+        "total": 53.25441589971508,
+        "python": 0.6325859664076319,
+        "llm": 52.621829933307446
+      },
+      "timed_record_counts": {
+        "total": 375,
+        "python": 375,
+        "llm": 375
+      }
+    },
+    {
+      "model": "qwen3.8-27b-q8_0-contract-nf",
+      "record_count": 375,
+      "required_iteration_counts": {
+        "0": 153,
+        "1-5": 8,
+        "6-10": 0,
+        "exhausted": 0,
+        "early-stop": 214,
+        "errors": 0
+      },
+      "unverified_criteria": {
+        "record_count": 214,
+        "failed_counts": {
+          "2NF": 15,
+          "3NF": 56,
+          "lossless_decomposition": 185,
+          "dependency_preservation": 4,
+          "others": 0
+        },
+        "unavailable_counts": {
+          "2NF": 2,
+          "3NF": 2,
+          "lossless_decomposition": 2,
+          "dependency_preservation": 2
+        }
+      },
+      "mean_table_match_pct": {
+        "exact": 54.77232323232323,
+        "similarity": 77.48039442039442
+      },
+      "mean_column_match_pct": {
+        "exact": 43.591088662348874,
+        "similarity": 69.49748639417852
+      },
+      "mean_tokens": {
+        "input": 3441.922666666667,
+        "output": 2020.7973333333334,
+        "total": 5462.72
+      },
+      "reported_token_events": {
+        "input": 984,
+        "output": 984,
+        "total": 984
+      },
+      "llm_event_count": 984,
+      "mean_seconds": {
+        "total": 110.4846895980627,
+        "python": 1.505854877719966,
+        "llm": 108.97883472034273
       },
       "timed_record_counts": {
         "total": 375,

@@ -95,9 +95,11 @@ Both reports record elapsed time and LLM request time in seconds. The main repor
 
 Use `spec_id` and `input_line` to match rows across the reports. Both files record `prompt` as a JSON array of chat messages and `model_response` as raw text. See the detailed guide for field definitions and the Python API. [Pipeline explained](PIPELINE-EXPLAINED.md)
 
-### Baseline folders
+### Baseline and contract folders
 
 Two folders hold baselines made from the saved `qwen3.8-27b-q8_0` run, with no new LLM call. They use the same CSV columns.
 
 - `qwen3.8-27b-q8_0-oneshot` keeps the extraction and the first schema proposal of each specification. A proposal that passes the verifier is `verified`; any other is `early-stop`.
 - `qwen3.8-27b-q8_0-bernstein` keeps the extraction, then builds the schema with Bernstein's 3NF synthesis from the extracted attributes, types, and FDs (minimal cover, one relation per left side, a key relation if no relation holds a key). The verifier checks it with the same FDs. Its LLM time is the extraction call only.
+
+Two more folders hold the contract pipeline from [thromel/text2schema](https://github.com/thromel/text2schema), run with the same model and thinking off: `qwen3.8-27b-q8_0-contract` (one LLM call returns the attributes, keys, foreign keys, and rules, and a compiler writes the SQL) and `qwen3.8-27b-q8_0-contract-nf` (the same, then a normal-form loop with this repository's extraction prompt and verifier, at most 3 proposals). Columns they do not produce are empty. See the [rubric evaluation guide](../rubric-evaluation/README.md).

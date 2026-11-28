@@ -18,6 +18,9 @@ settings, prompt files, and the CSV results.
 The [pipeline evaluation guide](pipeline-evaluation/README.md) shows how to turn
 saved runs into verification charts and schema matching, token, and timing tables.
 
+The [rubric evaluation guide](rubric-evaluation/README.md) scores the same runs on keys,
+foreign keys, and rules with Z3 and a judge LLM, and lists the run folders added for it.
+
 The [Z3 verifier guide](verifier/README.md) shows how to verify a proposed relational
 schema and use the feedback to refine it.
 
